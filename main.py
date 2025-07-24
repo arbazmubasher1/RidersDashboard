@@ -1,23 +1,24 @@
 import streamlit as st
 import pandas as pd
 import gspread
-from gspread_dataframe import get_as_dataframe
-from datetime import datetime
-
-# Connect to Google Sheet
-
-import streamlit as st
-import gspread
 from google.oauth2.service_account import Credentials
+from gspread_dataframe import get_as_dataframe
+
+# Define required scopes
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 # Load credentials from Streamlit secrets
 creds_dict = st.secrets["gcp_service_account"]
-credentials = Credentials.from_service_account_info(creds_dict)
+
+# Create credentials with proper scopes
+credentials = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+
+# Authorize with gspread
 gc = gspread.authorize(credentials)
 
+# Open spreadsheet and worksheet
 sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit")
 worksheet = sheet.worksheet("For Dashboard")
-
 
 
 # --- Function to format time ---

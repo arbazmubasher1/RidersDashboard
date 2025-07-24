@@ -37,6 +37,7 @@ def safe_time_average(series):
     return format_timedelta(valid.mean()) if not valid.empty else "00:00:00.00"
 
 @st.cache_data(ttl=600)
+@st.cache_data(ttl=600)
 def load_data():
     df = get_as_dataframe(worksheet, evaluate_formulas=True)
     df.dropna(how="all", inplace=True)
@@ -231,26 +232,58 @@ for inv_type, val in comp_group.items():
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{val} PKR</div>", unsafe_allow_html=True)
 
-# 💰 Invoice Summary with Deductions
+# 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
 st.markdown("<h3 style='margin-top: 1.5em;'>💰 Invoice Summary</h3>", unsafe_allow_html=True)
-total_invoices = len(filtered_df)
-total_amount = filtered_df['Total Amount'].sum()
-cancelled_amount = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']['Total Amount'].sum()
-net_amount = total_amount - cancelled_amount
 
+# --- Complaint Order Details ---
+complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
+num_complaints = len(complaint_df)
+complaint_amount = complaint_df['Total Amount'].sum()
+
+# --- Staff Tab Order Details ---
+staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab']
+num_staff_tab = len(staff_tab_df)
+staff_tab_amount = staff_tab_df['Total Amount'].sum()
+
+# --- Valid Invoices (exclude both Complaint and Staff Tab)
+filtered_df_valid = filtered_df[
+    ~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])
+]
+
+total_invoices = len(filtered_df_valid)
+total_amount = filtered_df_valid['Total Amount'].sum()
+
+# Cancelled amount can remain from full filtered set
+cancelled_amount = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']['Total Amount'].sum()
+rider_payouts = filtered_df['80/160'].sum()
+
+# COD and Card from valid orders
+cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
+card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
+
+# Net revenue after excluding complaints, staff tab, cancelled, and rider payouts
+net_after_cancel = total_amount - cancelled_amount
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_payouts
+
+# --- Summary Dictionary ---
 invoice_summary = {
-    "Total Invoices": total_invoices,
-    "Total Amount": f"Rs {total_amount:,.0f}",
+    "Total Valid Invoices": total_invoices,
+    "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
     "Cancelled Order Amount": f"- Rs {cancelled_amount:,.0f}",
-    "Net Revenue": f"Rs {net_amount:,.0f}"
+    "Complaint Orders": f"{num_complaints}",
+    "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
+    "Staff Tab Orders": f"{num_staff_tab}",
+    "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
+    "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
+    "COD Total Amount": f"Rs {cod_total:,.0f}",
+    "Card Total Amount": f"Rs {card_total:,.0f}",
+    "Final Net Collection (After All Deductions)": f"Rs {final_net_collection:,.0f}"
 }
+
+
 for label, value in invoice_summary.items():
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
-
-# View Raw Data
-with st.expander("📄 View Raw Data"):
-    st.dataframe(filtered_df.reset_index(drop=True))

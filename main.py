@@ -5,7 +5,16 @@ from gspread_dataframe import get_as_dataframe
 from datetime import datetime
 
 # Connect to Google Sheet
-gc = gspread.service_account(filename='credentials.json')
+
+import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
+
+# Load credentials from Streamlit secrets
+creds_dict = st.secrets["gcp_service_account"]
+credentials = Credentials.from_service_account_info(creds_dict)
+gc = gspread.authorize(credentials)
+
 sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit")
 worksheet = sheet.worksheet("For Dashboard")
 

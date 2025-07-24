@@ -1,0 +1,19 @@
+# Ignore Google credentials
+credentials.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Jupyter
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# Mac / Linux / Windows OS files
+.DS_Store
+Thumbs.db

@@ -3,6 +3,8 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 from gspread_dataframe import get_as_dataframe
+from datetime import datetime
+
 
 # Define required scopes
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]

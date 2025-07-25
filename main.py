@@ -37,7 +37,6 @@ def safe_time_average(series):
     return format_timedelta(valid.mean()) if not valid.empty else "00:00:00.00"
 
 @st.cache_data(ttl=600)
-@st.cache_data(ttl=600)
 def load_data():
     df = get_as_dataframe(worksheet, evaluate_formulas=True)
     df.dropna(how="all", inplace=True)
@@ -110,8 +109,7 @@ else:
     ]
 
 # ✅ Keep only rows with a valid Invoice Number
-consolidated_df = consolidated_df[consolidated_df['Invoice Number'].notna()]
-
+#consolidated_df = consolidated_df[consolidated_df['Invoice Number'].notna()]
 
 
 consolidated_metrics = {
@@ -222,15 +220,20 @@ for label, value in labels.items():
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
-# Breakdown by Invoice Type
-st.markdown("<h4 style='margin-top: 1em;'>Compensation by Invoice Type:</h4>", unsafe_allow_html=True)
-comp_group = filtered_df.groupby('Invoice Type')['80/160'].sum()
-for inv_type, val in comp_group.items():
+comp_summary = (
+    filtered_df.groupby('Invoice Type')
+    .agg(Order_Count=('Invoice Type', 'count'), Payout=('80/160', 'sum'))
+    .sort_values('Payout', ascending=False)
+)
+
+for inv_type, row in comp_summary.iterrows():
+    label = f"{inv_type} (Count: {row['Order_Count']})"
+    value = f"{row['Payout']} PKR"
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<span style='font-size:16px'>- {inv_type}</span>", unsafe_allow_html=True)
+        st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{val} PKR</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
 # 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
 st.markdown("<h3 style='margin-top: 1.5em;'>💰 Invoice Summary</h3>", unsafe_allow_html=True)
@@ -287,3 +290,7 @@ for label, value in invoice_summary.items():
         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+
+# View Raw Data
+with st.expander("📄 View Raw Data"):
+    st.dataframe(filtered_df.reset_index(drop=True))

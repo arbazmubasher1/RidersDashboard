@@ -38,7 +38,12 @@ def safe_time_average(series):
 
 @st.cache_data(ttl=600)
 def load_data():
-    df = get_as_dataframe(worksheet, evaluate_formulas=True)
+    df = get_as_dataframe(
+        worksheet,
+        evaluate_formulas=True,
+        include_tailing_empty=False,
+        default_blank=""
+    )
     df.dropna(how="all", inplace=True)
     df.dropna(axis=1, how="all", inplace=True)
     df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
@@ -51,7 +56,9 @@ def load_data():
 
     df['80/160'] = pd.to_numeric(df['80/160'], errors='coerce').fillna(0).astype(int)
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
+
     return df, datetime.now()
+
 # Page setup
 st.set_page_config(page_title="Rider Delivery Dashboard", layout="wide")
 st.sidebar.header("🔍 Search Filters")
@@ -66,15 +73,24 @@ start_date, end_date = st.sidebar.date_input("Select Date Range", [df['Date'].mi
 
 # Rider Filter
 rider_options = sorted(df['Rider Name/Code'].dropna().unique())
-selected_riders = st.sidebar.multiselect("Select Rider(s)", rider_options, default=rider_options)
+# Initialize selected riders in session state if not present
+if 'selected_riders' not in st.session_state:
+    st.session_state.selected_riders = rider_options
 
+# Buttons to modify session state
 col1, col2 = st.sidebar.columns(2)
 with col1:
     if st.button("Select All Riders"):
-        selected_riders = rider_options
+        st.session_state.selected_riders = rider_options
 with col2:
     if st.button("Clear All Riders"):
-        selected_riders = []
+        st.session_state.selected_riders = []
+
+# Rider multiselect using session state
+selected_riders = st.sidebar.multiselect(
+    "Select Rider(s)", rider_options, default=st.session_state.selected_riders, key="rider_multiselect"
+)
+st.session_state.selected_riders = selected_riders
 
 # Invoice Type Filter
 invoice_type_options = sorted(df['Invoice Type'].dropna().unique())
@@ -93,8 +109,8 @@ filtered_df = df[
     ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True)
 ]
 
-# --- Consolidated Overview (Unfiltered except by Date & Shift) ---
-st.markdown("## 📦 Consolidated Overview (By Date & Shift)", unsafe_allow_html=True)
+# # --- Consolidated Overview (Unfiltered except by Date & Shift) ---
+# st.markdown("## 📦 Consolidated Overview (By Date & Shift)", unsafe_allow_html=True)
 
 if selected_shifts:
     consolidated_df = df[
@@ -112,29 +128,29 @@ else:
 #consolidated_df = consolidated_df[consolidated_df['Invoice Number'].notna()]
 
 
-consolidated_metrics = {
-    "Total Orders": len(consolidated_df),
-    "Completed Orders": (consolidated_df['Order Status'].str.lower() == 'completed').sum(),
-    "Cancelled Orders": (consolidated_df['Order Status'].str.lower() == 'cancel order').sum(),
-    "Rider Reading Payouts": f"{consolidated_df['80/160'].sum()} PKR",
-    "Total Revenue": f"Rs {consolidated_df['Total Amount'].sum():,}",
-    "Avg Kitchen Time": safe_time_average(consolidated_df['Total Kitchen Time']),
-    "Avg Pickup Time": safe_time_average(consolidated_df['Total Pickup Time']),
-    "Avg Delivery Time": safe_time_average(consolidated_df['Total Delivery Time']),
-    "Avg Rider Return Time": safe_time_average(consolidated_df['Total Rider Return Time']),
-    "Avg Cycle Time": safe_time_average(consolidated_df['Total Cycle Time']),
+# consolidated_metrics = {
+#     "Total Orders": len(consolidated_df),
+#     "Completed Orders": (consolidated_df['Order Status'].str.lower() == 'completed').sum(),
+#     "Cancelled Orders": (consolidated_df['Order Status'].str.lower() == 'cancel order').sum(),
+#     "Rider Reading Payouts": f"{consolidated_df['80/160'].sum()} PKR",
+#     "Total Revenue": f"Rs {consolidated_df['Total Amount'].sum():,}",
+#     "Avg Kitchen Time": safe_time_average(consolidated_df['Total Kitchen Time']),
+#     "Avg Pickup Time": safe_time_average(consolidated_df['Total Pickup Time']),
+#     "Avg Delivery Time": safe_time_average(consolidated_df['Total Delivery Time']),
+#     "Avg Rider Return Time": safe_time_average(consolidated_df['Total Rider Return Time']),
+#     "Avg Cycle Time": safe_time_average(consolidated_df['Total Cycle Time']),
 
-}
+# }
 
 
-for label, value in consolidated_metrics.items():
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+# for label, value in consolidated_metrics.items():
+#     col1, col2 = st.columns([3, 1])
+#     with col1:
+#         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
+#     with col2:
+#         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
-st.markdown("---")
+# st.markdown("---")
 
 # --- Header for filtered metrics ---
 st.title("🛵 Rider Delivery Dashboard")
@@ -236,6 +252,7 @@ for inv_type, row in comp_summary.iterrows():
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
 # 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
+# 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
 st.markdown("<h3 style='margin-top: 1.5em;'>💰 Invoice Summary</h3>", unsafe_allow_html=True)
 
 # --- Complaint Order Details ---
@@ -248,7 +265,7 @@ staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab
 num_staff_tab = len(staff_tab_df)
 staff_tab_amount = staff_tab_df['Total Amount'].sum()
 
-# --- Valid Invoices (exclude both Complaint and Staff Tab)
+# --- Valid Invoices (exclude Complaint and Staff Tab)
 filtered_df_valid = filtered_df[
     ~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])
 ]
@@ -256,40 +273,69 @@ filtered_df_valid = filtered_df[
 total_invoices = len(filtered_df_valid)
 total_amount = filtered_df_valid['Total Amount'].sum()
 
-# Cancelled amount can remain from full filtered set
-cancelled_amount = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']['Total Amount'].sum()
-rider_payouts = filtered_df['80/160'].sum()
+# --- Cancelled Orders ---
+cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
+cancelled_amount = cancelled_df['Total Amount'].sum()
 
-# COD and Card from valid orders
+# --- Cancelled by Invoice Type Breakdown ---
+cancelled_by_invoice_type = (
+    cancelled_df.groupby('Invoice Type')['Total Amount']
+    .agg(['count', 'sum'])
+    .reset_index()
+)
+
+
+
+# --- Rider Payouts and Cash Submissions ---
+rider_payouts = filtered_df['80/160'].sum()
+rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
+
+# --- Payment Type Breakdown (valid only) ---
 cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
 card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
-# Net revenue after excluding complaints, staff tab, cancelled, and rider payouts
+# --- Zeeshan Logic ---
+zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted
+
+# --- Final Net Collection Calculation ---
 net_after_cancel = total_amount - cancelled_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_payouts
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted
 
 # --- Summary Dictionary ---
 invoice_summary = {
-    "Total Valid Invoices": total_invoices,
+    #"Total Valid Invoices": total_invoices,
     "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
-    "Cancelled Order Amount": f"- Rs {cancelled_amount:,.0f}",
-    "Complaint Orders": f"{num_complaints}",
-    "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
-    "Staff Tab Orders": f"{num_staff_tab}",
-    "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
-    "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
-    "COD Total Amount": f"Rs {cod_total:,.0f}",
     "Card Total Amount": f"Rs {card_total:,.0f}",
-    "Final Net Collection (After All Deductions)": f"Rs {final_net_collection:,.0f}"
+    "COD Total Amount": f"Rs {cod_total:,.0f}",
+    "Cancelled Order Amount": f"- Rs {cancelled_amount:,.0f}",
+    "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
+    "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
+    "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",    
+    "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
+    "Final Net Collection (COD Amount - Rider Payout - Rider Cash DFPL Submission)":f"{zeeshanvalue}",
+    "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}"
 }
 
-
+# --- Display Summary ---
 for label, value in invoice_summary.items():
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+
+# --- Cancelled Orders Breakdown by Invoice Type ---
+if not cancelled_by_invoice_type.empty:
+    st.markdown("<h4 style='margin-top: 1em;'>🚫 Cancelled Orders by Invoice Type</h4>", unsafe_allow_html=True)
+    for _, row in cancelled_by_invoice_type.iterrows():
+        label = f"{row['Invoice Type']} (Orders: {row['count']})"
+        value = f"- Rs {row['sum']:,.0f}"
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown(f"<span style='font-size:16px'>{label}</span>", unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+
 
 # View Raw Data
 with st.expander("📄 View Raw Data"):

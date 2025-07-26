@@ -41,7 +41,7 @@ def load_data():
     df = get_as_dataframe(
         worksheet,
         evaluate_formulas=True,
-        include_tailing_empty=False,
+        include_tailing_empty=True,
         default_blank=""
     )
     df.dropna(how="all", inplace=True)

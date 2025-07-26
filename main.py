@@ -59,7 +59,7 @@ def load_data():
 
     df['80/160'] = pd.to_numeric(df['80/160'], errors='coerce').fillna(0).astype(int)
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
-
+    df['Rider Submission to DFPL'] = pd.to_numeric(df['Rider Submission to DFPL'], errors='coerce').fillna(0).astype(int)
     return df, datetime.now()
 
 

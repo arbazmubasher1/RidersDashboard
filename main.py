@@ -71,6 +71,8 @@ if st.sidebar.button("🔄 Reload Sheet"):
     st.cache_data.clear()
 
 df, last_updated = load_data()
+st.subheader("🧪 Debug Columns")
+st.write("All column names:", df.columns.tolist())
 
 # Date Range
 start_date, end_date = st.sidebar.date_input("Select Date Range", [df['Date'].min(), df['Date'].max()])

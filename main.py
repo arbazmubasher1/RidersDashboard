@@ -44,11 +44,25 @@ def load_data():
         include_tailing_empty=False,
         default_blank=""
     )
+
+    # Drop empty rows/columns
     df.dropna(how="all", inplace=True)
     df.dropna(axis=1, how="all", inplace=True)
-    df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
+    # Clean REF errors
+    df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
+
+    # Force correct column headers
+    expected_columns = [
+        "Date", "Rider Cash Submission to DFPL", "Rider Name/Code", "Invoice Type", "Shift Type",
+        "Invoice Number", "Total Amount", "80/160", "Total Kitchen Time", "Total Pickup Time",
+        "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
+        "Delay Reason", "Customer Complaint", "Order Status"
+    ]
+    df.columns = expected_columns[:len(df.columns)]
+
+    # Convert types
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     time_cols = ['Total Kitchen Time', 'Total Pickup Time', 'Total Delivery Time',
                  'Total Rider Return Time', 'Total Cycle Time']
     for col in time_cols:
@@ -58,8 +72,8 @@ def load_data():
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
     df['Rider Cash Submission to DFPL'] = pd.to_numeric(df['Rider Cash Submission to DFPL'], errors='coerce').fillna(0)
 
-
     return df, datetime.now()
+
 
 # Page setup
 st.set_page_config(page_title="Rider Delivery Dashboard", layout="wide")

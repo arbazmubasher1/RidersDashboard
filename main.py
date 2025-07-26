@@ -314,7 +314,7 @@ invoice_summary = {
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",    
     #"Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
-    "Final Net Collection (COD Amount - Rider Payout - Rider Cash DFPL Submission)":f"{zeeshanvalue}",
+    "Final Net Collection (COD Amount - Rider Payout)":f"{zeeshanvalue}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}"
 }
 

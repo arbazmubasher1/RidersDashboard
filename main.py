@@ -41,11 +41,11 @@ def load_data():
     df = get_as_dataframe(
         worksheet,
         evaluate_formulas=True,
-        include_tailing_empty=False,
+        include_tailing_empty=True,
         default_blank=""
     )
-    df.dropna(how="all", inplace=True)
-    df.dropna(axis=1, how="all", inplace=True)
+    #df.dropna(how="all", inplace=True)
+    #df.dropna(axis=1, how="all", inplace=True)
     df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 

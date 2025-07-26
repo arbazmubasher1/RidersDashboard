@@ -285,6 +285,9 @@ cancelled_by_invoice_type = (
 )
 
 
+import difflib
+possible_match = difflib.get_close_matches("Rider Cash Submission to DFPL", filtered_df.columns, n=1)
+st.write("Did you mean:", possible_match)
 
 # --- Rider Payouts and Cash Submissions ---
 rider_payouts = filtered_df['80/160'].sum()

@@ -47,6 +47,9 @@ def load_data():
     df.dropna(how="all", inplace=True)
     df.dropna(axis=1, how="all", inplace=True)
     df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
+
+    df.columns = df.columns.str.strip()  # ✅ add this line
+
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
     time_cols = ['Total Kitchen Time', 'Total Pickup Time', 'Total Delivery Time',
@@ -58,6 +61,7 @@ def load_data():
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
 
     return df, datetime.now()
+
 
 # Page setup
 st.set_page_config(page_title="Rider Delivery Dashboard", layout="wide")
@@ -285,9 +289,6 @@ cancelled_by_invoice_type = (
 )
 
 
-import difflib
-possible_match = difflib.get_close_matches("Rider Cash Submission to DFPL", filtered_df.columns, n=1)
-st.write("Did you mean:", possible_match)
 
 # --- Rider Payouts and Cash Submissions ---
 rider_payouts = filtered_df['80/160'].sum()

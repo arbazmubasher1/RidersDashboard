@@ -284,11 +284,12 @@ cancelled_by_invoice_type = (
     .reset_index()
 )
 
+st.write(filtered_df.columns.tolist())
 
 
 # --- Rider Payouts and Cash Submissions ---
 rider_payouts = filtered_df['80/160'].sum()
-#rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
+rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
 
 # --- Payment Type Breakdown (valid only) ---
 cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()

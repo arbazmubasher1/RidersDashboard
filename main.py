@@ -41,25 +41,41 @@ def load_data():
     df = get_as_dataframe(
         worksheet,
         evaluate_formulas=True,
-        include_tailing_empty=True,
+        include_tailing_empty=False,
         default_blank=""
     )
     df.dropna(how="all", inplace=True)
     df.dropna(axis=1, how="all", inplace=True)
     df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
+    
+    df.columns = df.columns.str.strip()
 
-    df.columns = df.columns.str.strip()  # ✅ add this line
+    # --- Force specific columns to exist even if empty ---
+    expected_columns = [
+        "Date", "Rider Name/Code", "Invoice Type", "Shift Type", "Invoice Number",
+        "Total Amount", "80/160", "Total Kitchen Time", "Total Pickup Time",
+        "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
+        "Delay Reason", "Customer Complaint", "Order Status",
+        "Rider Cash Submission to DFPL"  # <-- explicitly ensure it exists
+    ]
 
+    for col in expected_columns:
+        if col not in df.columns:
+            df[col] = None  # Add column if missing
+
+    # --- Continue transformations ---
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-
-    time_cols = ['Total Kitchen Time', 'Total Pickup Time', 'Total Delivery Time',
-                 'Total Rider Return Time', 'Total Cycle Time']
+    time_cols = [
+        'Total Kitchen Time', 'Total Pickup Time', 'Total Delivery Time',
+        'Total Rider Return Time', 'Total Cycle Time'
+    ]
     for col in time_cols:
         df[col] = pd.to_timedelta(df[col].astype(str), errors='coerce')
 
     df['80/160'] = pd.to_numeric(df['80/160'], errors='coerce').fillna(0).astype(int)
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
-    df['Rider Submission to DFPL'] = pd.to_numeric(df['Rider Submission to DFPL'], errors='coerce').fillna(0).astype(int)
+    df['Rider Cash Submission to DFPL'] = pd.to_numeric(df['Rider Cash Submission to DFPL'], errors='coerce').fillna(0).astype(int)
+
     return df, datetime.now()
 
 

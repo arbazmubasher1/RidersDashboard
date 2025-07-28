@@ -193,7 +193,7 @@ st.markdown(
 
 # Emoji mapping for Closing Status
 closing_status_emojis = {
-    "Shift Closed": "✅",
+    "Shift Close": "✅",
     "Open": "🔓",
     "Pending": "⏳",
     "Rejected": "❌",

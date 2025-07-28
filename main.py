@@ -97,6 +97,12 @@ rider_options = sorted(df['Rider Name/Code'].dropna().unique())
 if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = rider_options
 
+
+# Closing Status Filter
+closing_status_options = sorted(df['Closing Status'].dropna().unique())
+selected_closing_status = st.sidebar.multiselect("Select Closing Status", closing_status_options, default=closing_status_options)
+
+
 # Buttons to modify session state
 col1, col2 = st.sidebar.columns(2)
 with col1:
@@ -126,8 +132,10 @@ filtered_df = df[
     (df['Date'] <= pd.to_datetime(end_date)) &
     (df['Invoice Type'].isin(selected_invoice_type)) &
     ((df['Rider Name/Code'].isin(selected_riders)) if selected_riders else True) &
-    ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True)
+    ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True) &
+    ((df['Closing Status'].isin(selected_closing_status)) if selected_closing_status else True)
 ]
+
 
 # # --- Consolidated Overview (Unfiltered except by Date & Shift) ---
 # st.markdown("## 📦 Consolidated Overview (By Date & Shift)", unsafe_allow_html=True)
@@ -181,6 +189,18 @@ st.markdown(
     f"🕑 **{', '.join(selected_shifts) if selected_shifts else 'All'}**",
     unsafe_allow_html=True
 )
+
+
+# ✅ Closing Status Summary
+st.markdown("<h3 style='margin-top: 1.5em;'>🔒 Rider Closing Status</h3>", unsafe_allow_html=True)
+for status in filtered_df['Closing Status'].dropna().unique():
+    count = (filtered_df['Closing Status'] == status).sum()
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"<span style='font-size:16px'>- {status}</span>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{count}</div>", unsafe_allow_html=True)
+
 st.markdown("---")
 
 # --- Grouped Metrics (Filtered) ---

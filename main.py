@@ -194,12 +194,7 @@ st.markdown(
 # Emoji mapping for Closing Status
 closing_status_emojis = {
     "Shift Close": "✅",
-    "Open": "🔓",
-    "Pending": "⏳",
-    "Rejected": "❌",
-    "Submitted": "📤",
-    "Approved": "🟢",
-    "Disapproved": "🔴"
+    "Pending": "⏳"
 }
 
 st.markdown("<h3 style='margin-top: 1.5em;'>🔒 Rider Closing Status</h3>", unsafe_allow_html=True)

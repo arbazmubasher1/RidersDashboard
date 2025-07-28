@@ -98,11 +98,6 @@ if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = rider_options
 
 
-# Exclude 'Pending' and 'Shift Close' from sidebar filter
-all_statuses = df['Closing Status'].dropna().unique()
-closing_status_options = sorted([s for s in all_statuses if s not in ['Pending', 'Shift Close']])
-selected_closing_status = st.sidebar.multiselect("Select Closing Status (excluding 'Pending' & 'Shift Close')", closing_status_options, default=closing_status_options)
-
 
 # Buttons to modify session state
 col1, col2 = st.sidebar.columns(2)
@@ -133,9 +128,9 @@ filtered_df = df[
     (df['Date'] <= pd.to_datetime(end_date)) &
     (df['Invoice Type'].isin(selected_invoice_type)) &
     ((df['Rider Name/Code'].isin(selected_riders)) if selected_riders else True) &
-    ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True) &
-    ((df['Closing Status'].isin(selected_closing_status)) if selected_closing_status else df['Closing Status'].isin(closing_status_options))
+    ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True)
 ]
+
 
 
 # # --- Consolidated Overview (Unfiltered except by Date & Shift) ---
@@ -223,7 +218,7 @@ sos_metrics = {
     "Avg Delivery Time": format_timedelta(filtered_df['Total Delivery Time'].mean()),
     "Avg Rider Return Time": format_timedelta(filtered_df['Total Rider Return Time'].mean()),
     "Avg Cycle Time": format_timedelta(filtered_df['Total Cycle Time'].mean()),
-        "Avg Promised Time": format_timedelta(filtered_df['Total Promised Time'].mean())  # <- New Metric
+    "Avg Promised Time": format_timedelta(filtered_df['Total Promised Time'].mean())  # <- New Metric
 
 }
 

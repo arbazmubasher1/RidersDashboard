@@ -56,7 +56,7 @@ def load_data():
         "Total Amount", "80/160", "Total Kitchen Time", "Total Pickup Time",
         "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
         "Delay Reason", "Customer Complaint", "Order Status",
-        "Rider Cash Submission to DFPL","Closing Status"  # <-- explicitly ensure it exists
+        "Rider Cash Submission to DFPL","Closing Status","Total Promised Time"  # <-- explicitly ensure it exists
     ]
 
     for col in expected_columns:
@@ -67,7 +67,7 @@ def load_data():
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     time_cols = [
         'Total Kitchen Time', 'Total Pickup Time', 'Total Delivery Time',
-        'Total Rider Return Time', 'Total Cycle Time'
+        'Total Rider Return Time', 'Total Cycle Time','Total Promised Time'
     ]
     for col in time_cols:
         df[col] = pd.to_timedelta(df[col].astype(str), errors='coerce')

@@ -98,26 +98,10 @@ if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = rider_options
 
 
-# Emoji mapping for Closing Status
-closing_status_emojis = {
-    "Closed": "✅",
-    "Open": "🔓",
-    "Pending": "⏳",
-    "Rejected": "❌",
-    "Submitted": "📤",
-    "Approved": "🟢",
-    "Disapproved": "🔴"
-}
+# Closing Status Filter
+closing_status_options = sorted(df['Closing Status'].dropna().unique())
+selected_closing_status = st.sidebar.multiselect("Select Closing Status", closing_status_options, default=closing_status_options)
 
-st.markdown("<h3 style='margin-top: 1.5em;'>🔒 Rider Closing Status</h3>", unsafe_allow_html=True)
-
-for status in filtered_df['Closing Status'].dropna().unique():
-    emoji = closing_status_emojis.get(status, "🔘")  # fallback emoji
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<span style='font-size:16px'>- {status}</span>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div style='text-align:right; font-size:18px'>{emoji}</div>", unsafe_allow_html=True)
 
 # Buttons to modify session state
 col1, col2 = st.sidebar.columns(2)
@@ -207,16 +191,26 @@ st.markdown(
 )
 
 
-# ✅ Closing Status Summary
+# Emoji mapping for Closing Status
+closing_status_emojis = {
+    "Closed": "✅",
+    "Open": "🔓",
+    "Pending": "⏳",
+    "Rejected": "❌",
+    "Submitted": "📤",
+    "Approved": "🟢",
+    "Disapproved": "🔴"
+}
+
 st.markdown("<h3 style='margin-top: 1.5em;'>🔒 Rider Closing Status</h3>", unsafe_allow_html=True)
+
 for status in filtered_df['Closing Status'].dropna().unique():
-    count = (filtered_df['Closing Status'] == status).sum()
+    emoji = closing_status_emojis.get(status, "🔘")  # fallback emoji
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown(f"<span style='font-size:16px'>- {status}</span>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{count}</div>", unsafe_allow_html=True)
-
+        st.markdown(f"<div style='text-align:right; font-size:18px'>{emoji}</div>", unsafe_allow_html=True)
 st.markdown("---")
 
 # --- Grouped Metrics (Filtered) ---

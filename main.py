@@ -98,9 +98,10 @@ if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = rider_options
 
 
-# Closing Status Filter
-closing_status_options = sorted(df['Closing Status'].dropna().unique())
-selected_closing_status = st.sidebar.multiselect("Select Closing Status", closing_status_options, default=closing_status_options)
+# Exclude 'Pending' and 'Shift Close' from sidebar filter
+all_statuses = df['Closing Status'].dropna().unique()
+closing_status_options = sorted([s for s in all_statuses if s not in ['Pending', 'Shift Close']])
+selected_closing_status = st.sidebar.multiselect("Select Closing Status (excluding 'Pending' & 'Shift Close')", closing_status_options, default=closing_status_options)
 
 
 # Buttons to modify session state
@@ -133,7 +134,7 @@ filtered_df = df[
     (df['Invoice Type'].isin(selected_invoice_type)) &
     ((df['Rider Name/Code'].isin(selected_riders)) if selected_riders else True) &
     ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True) &
-    ((df['Closing Status'].isin(selected_closing_status)) if selected_closing_status else True)
+    ((df['Closing Status'].isin(selected_closing_status)) if selected_closing_status else df['Closing Status'].isin(closing_status_options))
 ]
 
 

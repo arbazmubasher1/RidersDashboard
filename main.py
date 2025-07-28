@@ -222,6 +222,8 @@ sos_metrics = {
     "Avg Delivery Time": format_timedelta(filtered_df['Total Delivery Time'].mean()),
     "Avg Rider Return Time": format_timedelta(filtered_df['Total Rider Return Time'].mean()),
     "Avg Cycle Time": format_timedelta(filtered_df['Total Cycle Time'].mean()),
+        "Avg Promised Time": format_timedelta(filtered_df['Total Promised Time'].mean())  # <- New Metric
+
 }
 
 # 📊 Basic Metrics

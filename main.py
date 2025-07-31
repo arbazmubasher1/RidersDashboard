@@ -180,9 +180,9 @@ else:
 st.title("🛵 Rider Delivery Dashboard - P6")
 st.markdown(
     f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"
-    f"🧍 **{', '.join(selected_riders) if selected_riders else 'All'}** &nbsp;&nbsp;&nbsp;"
+    f"🧍 **{', '.join(selected_riders) if selected_riders else 'None'}** &nbsp;&nbsp;&nbsp;"
     f"📄 **{', '.join(selected_invoice_type)}** &nbsp;&nbsp;&nbsp;"
-    f"🕑 **{', '.join(selected_shifts) if selected_shifts else 'All'}**",
+    f"🕑 **{', '.join(selected_shifts) if selected_shifts else 'None'}**",
     unsafe_allow_html=True
 )
 

@@ -321,7 +321,7 @@ for inv_type, row in comp_summary.iterrows():
 
 # 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
 # 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
-st.markdown("<h3 style='margin-top: 1.5em;'>💰 Invoice Summary</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>Invoice Summary</h3>", unsafe_allow_html=True)
 
 # --- Complaint Order Details ---
 complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']

@@ -288,7 +288,7 @@ for label, value in sos_metrics.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Delay Reasons ---
-st.markdown("<h3>🛠️ Delay Reasons</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>Delay Reasons</h3>", unsafe_allow_html=True)
 for reason in filtered_df['Delay Reason'].dropna().unique():
     count = (filtered_df['Delay Reason'] == reason).sum()
     st.markdown(f"""

@@ -244,12 +244,12 @@ st.markdown("<div class='card'><h3>📢 Rider Closing Status</h3>", unsafe_allow
 
 closing_status_counts = filtered_df['Closing Status'].dropna().value_counts()
 
-for status, count in closing_status_counts.items():
+for label, value in closing_status_counts.items():
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<span style='font-size:16px'>- {status}</span>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric'>{label}</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{count}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
 
 st.markdown("---")
 # --- Grouped Metrics (Filtered) ---

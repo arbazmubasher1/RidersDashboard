@@ -226,7 +226,7 @@ if selected_riders or selected_invoice_type or selected_shifts:
     st.markdown(
         f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"
         f"🧍 **{len(selected_riders)} rider(s) selected** &nbsp;&nbsp;&nbsp;"
-        f"📄 **{', '.join(selected_invoice_type)} &nbsp;&nbsp;&nbsp;**"
+        f"📄 <b>{', '.join(selected_invoice_type)}</b>&nbsp;&nbsp;&nbsp;"
         f"🕑 **{', '.join(selected_shifts) if selected_shifts else 'None'}**",
         unsafe_allow_html=True
     )

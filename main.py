@@ -80,7 +80,7 @@ def load_data():
 
 
 # Page setup
-st.set_page_config(page_title="Rider Delivery Dashboard", layout="wide")
+st.set_page_config(page_title="Rider Delivery Dashboard - P6", layout="wide")
 st.sidebar.header("🔍 Search Filters")
 
 if st.sidebar.button("🔄 Reload Sheet"):

@@ -273,14 +273,14 @@ for label, value in sos_metrics.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # 🛠️ Delay Reasons
-st.markdown("<h3 style='margin-top: 1.5em;'>🛠️ Delay Reasons </h3>", unsafe_allow_html=True)
-for reason in filtered_df['Delay Reason'].dropna().unique():
-    count = (filtered_df['Delay Reason'] == reason).sum()
+st.markdown("<div class='card'><h3>🔒 Rider Closing Status</h3>", unsafe_allow_html=True)
+for status, count in closing_status_counts.items():
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<span style='font-size:16px'>- {reason}</span>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric'>- {status}</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{count}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric-value'>{count}</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # 📢 Complaints
 st.markdown("<h3 style='margin-top: 1.5em;'>📢 Customer Complaints </h3>", unsafe_allow_html=True)

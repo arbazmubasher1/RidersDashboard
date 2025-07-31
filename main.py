@@ -426,7 +426,6 @@ zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted
 net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
 final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts
 
-invoice_summary = {
 
 invoice_summary = {
     "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",

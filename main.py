@@ -6,6 +6,32 @@ from gspread_dataframe import get_as_dataframe
 from datetime import datetime
 
 
+
+st.markdown("""
+    <style>
+        .card {
+            background-color: #f9f9f9;
+            padding: 1.2em;
+            margin-bottom: 1em;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            margin-top: 0;
+        }
+        .card-metric {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0.2em 0;
+        }
+        .card-metric-value {
+            text-align: right;
+            font-weight: bold;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # Define required scopes
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
@@ -225,14 +251,14 @@ sos_metrics = {
 
 }
 
-# 📊 Basic Metrics
-st.markdown("<h3 style='margin-bottom: 0.5em;'>📊 Basic Information</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>📊 Basic Information</h3>", unsafe_allow_html=True)
 for label, value in basic_metrics.items():
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric'>{label}</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ⏱️ SOS Metrics
 st.markdown("<h3 style='margin-top: 1.5em;'>⏱️ SOS Time Metrics</h3>", unsafe_allow_html=True)

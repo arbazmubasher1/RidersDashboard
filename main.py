@@ -79,7 +79,11 @@ def load_data():
 
 
 # Page setup
-st.set_page_config(page_title="Rider Delivery Dashboard - P6", layout="wide")
+st.markdown("""
+    <h1 style='text-align: center; color: #c62828; font-size: 42px; font-weight: bold; margin-bottom: 1em;'>
+        🛵 Rider Delivery Dashboard – P6
+    </h1>
+""", unsafe_allow_html=True)
 
 st.markdown("""
     <style>

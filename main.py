@@ -114,7 +114,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+st.sidebar.markdown(
+    """
+    <div style="text-align: center; margin-bottom: 1em;">
+        <img src="https://raw.githubusercontent.com/arbazmubasher1/RidersDashboard/main/logo%20JJ%20....png" width="180">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.sidebar.markdown(
+    """
+    <div style="text-align: center; margin-bottom: 1em;">
+        <img src="https://raw.githubusercontent.com/arbazmubasher1/RidersDashboard/main/logo%20JJ%20....png" width="180">
+        <p style="color: grey; font-size: 14px; margin-top: 0.5em;">Johnny & Jugnu</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
 st.sidebar.header("🔍 Search Filters")
+
 
 if st.sidebar.button("🔄 Reload Sheet"):
     st.cache_data.clear()

@@ -287,18 +287,28 @@ for label, value in sos_metrics.items():
         st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# 🛠️ Delay Reasons
-st.markdown("<div class='card'><h3>🛠️ Delay Reasons</h3>", unsafe_allow_html=True)
+# --- Delay Reasons ---
+st.markdown("<h3>🛠️ Delay Reasons</h3>", unsafe_allow_html=True)
 for reason in filtered_df['Delay Reason'].dropna().unique():
     count = (filtered_df['Delay Reason'] == reason).sum()
-    st.markdown(f"<div class='card-metric'>- {reason} <span style='float:right'>{count}</span></div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee;">
+            <span>{reason}</span>
+            <span><b>{count}</b></span>
+        </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("<div class='card'><h3>📢 Customer Complaints</h3>", unsafe_allow_html=True)
+# --- Customer Complaints ---
+st.markdown("<h3>📢 Customer Complaints</h3>", unsafe_allow_html=True)
 for complaint in filtered_df['Customer Complaint'].dropna().unique():
     count = (filtered_df['Customer Complaint'] == complaint).sum()
-    st.markdown(f"<div class='card-metric'>- {complaint} <span style='float:right'>{count}</span></div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee;">
+            <span>{complaint}</span>
+            <span><b>{count}</b></span>
+        </div>
+    """, unsafe_allow_html=True)
+
 
 # 🎯 Compensation Summary
 st.markdown("<div class='card'><h3>Rider Reading Payouts</h3>", unsafe_allow_html=True)

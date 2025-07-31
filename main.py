@@ -5,33 +5,6 @@ from google.oauth2.service_account import Credentials
 from gspread_dataframe import get_as_dataframe
 from datetime import datetime
 
-
-
-st.markdown("""
-    <style>
-        .card {
-            background-color: #f9f9f9;
-            padding: 1.2em;
-            margin-bottom: 1em;
-            border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-        .card h3 {
-            margin-top: 0;
-        }
-        .card-metric {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0.2em 0;
-        }
-        .card-metric-value {
-            text-align: right;
-            font-weight: bold;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-
 # Define required scopes
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
@@ -107,6 +80,36 @@ def load_data():
 
 # Page setup
 st.set_page_config(page_title="Rider Delivery Dashboard - P6", layout="wide")
+
+st.markdown("""
+    <style>
+        .card {
+            background-color: #c62828; /* strong red */
+            padding: 1.2em;
+            margin-bottom: 1.2em;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            color: white;
+        }
+        .card h3, .card h4 {
+            color: white;
+            margin-top: 0;
+        }
+        .card-metric {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0.2em 0;
+        }
+        .card-metric-value {
+            text-align: right;
+            font-weight: bold;
+        }
+        .card-metric span {
+            color: white;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 st.sidebar.header("🔍 Search Filters")
 
 if st.sidebar.button("🔄 Reload Sheet"):

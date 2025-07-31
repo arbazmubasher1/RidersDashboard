@@ -285,23 +285,12 @@ for complaint in filtered_df['Customer Complaint'].dropna().unique():
     st.markdown(f"<div class='card-metric'>- {complaint} <span style='float:right'>{count}</span></div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<div class='card'><h3>🎯 Rider Reading Payouts</h3>", unsafe_allow_html=True)
-for label, value in labels.items():
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<div class='card-metric'>{label}</div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
-
-for inv_type, row in comp_summary.iterrows():
-    label = f"{inv_type} (Count: {row['Order_Count']})"
-    value = f"{row['Payout']} PKR"
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<div class='card-metric'>{label}</div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+# 🎯 Compensation Summary
+st.markdown("<div class='card'><h3>Rider Reading Payouts</h3>", unsafe_allow_html=True)
+filtered_df['80/160'] = pd.to_numeric(filtered_df['80/160'], errors='coerce')
+count_80 = (filtered_df['80/160'] == 80).sum()
+count_160 = (filtered_df['80/160'] == 160).sum()
+total_comp = filtered_df['80/160'].sum()
 
 labels = {
     "80-PKR entries": count_80,

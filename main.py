@@ -117,16 +117,12 @@ st.markdown("""
 st.sidebar.markdown(
     """
     <div style="text-align: center; margin-bottom: 1em;">
-        <div style="display: flex; justify-content: center; gap: 10px;">
-            <img src="https://raw.githubusercontent.com/arbazmubasher1/RidersDashboard/main/logo%20JJ%20....png" width="90">
-            <img src="https://raw.githubusercontent.com/arbazmubasher1/RidersDashboard/main/WhatsApp%20Image%202025-07-31%20at%201.21.12%20PM.jpeg" width="90">
-        </div>
+        <img src="https://raw.githubusercontent.com/arbazmubasher1/RidersDashboard/main/logo%20JJ%20....png" width="180">
         <p style="color: grey; font-size: 14px; margin-top: 0.5em;">Johnny & Jugnu</p>
     </div>
     """,
     unsafe_allow_html=True
 )
-
 
 
 st.sidebar.header("🔍 Search Filters")

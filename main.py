@@ -394,7 +394,7 @@ for label, value in invoice_summary.items():
 
 # --- Cancelled Orders Breakdown by Invoice Type ---
 if not cancelled_by_invoice_type.empty:
-    st.markdown("<h4 style='margin-top: 1em;'>🚫 Cancelled Orders by Invoice Type</h4>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><h3>📢 Cancelled Orders by Invoice Types</h3>", unsafe_allow_html=True)
     for _, row in cancelled_by_invoice_type.iterrows():
         label = f"{row['Invoice Type']} (Orders: {row['count']})"
         value = f"- Rs {row['sum']:,.0f}"

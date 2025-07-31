@@ -244,13 +244,14 @@ st.markdown("<div class='card'><h3>📢 Rider Closing Status</h3>", unsafe_allow
 
 closing_status_counts = filtered_df['Closing Status'].dropna().value_counts()
 
-for label, value in closing_status_counts.items():
+st.markdown("<div class='card'><h3>📢 Rider Closing Status</h3>", unsafe_allow_html=True)
+for status, count in closing_status_counts.items():
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<div class='card-metric'>{label}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric'>{status}</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric-value'>{count}</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)  # This closes the card cleanly without adding an extra horizontal rule
 
 st.markdown("---")
 # --- Grouped Metrics (Filtered) ---

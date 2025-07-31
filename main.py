@@ -423,15 +423,16 @@ invoice_summary = {
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",    
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
-    #"Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL - Cancelled Amount)":f"{zeeshanvalue}",
+    "Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL - Cancelled Amount)":f"{zeeshanvalue}",
 }
+
 
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
 
 for label, value in invoice_summary.items():
-    is_flashing = "Final Net Collection" in label
-    flash_class = " flash" if is_flashing else ""
-    
+    is_flash = "Final Net Collection (COD Amount" in label  # Match only the COD-based line
+    flash_class = " flash" if is_flash else ""
+
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
@@ -439,14 +440,6 @@ for label, value in invoice_summary.items():
         st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
-
-# --- Display Summary ---
-for label, value in invoice_summary.items():
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
 # --- Cancelled Orders Breakdown by Invoice Type ---
 if not cancelled_by_invoice_type.empty:

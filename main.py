@@ -299,7 +299,7 @@ for reason in filtered_df['Delay Reason'].dropna().unique():
     """, unsafe_allow_html=True)
 
 # --- Customer Complaints ---
-st.markdown("<h3>📢 Customer Complaints</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>⏱Customer Complaints</h3>", unsafe_allow_html=True)
 for complaint in filtered_df['Customer Complaint'].dropna().unique():
     count = (filtered_df['Customer Complaint'] == complaint).sum()
     st.markdown(f"""

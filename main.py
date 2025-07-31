@@ -263,14 +263,14 @@ for label, value in basic_metrics.items():
         st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ⏱️ SOS Metrics
-st.markdown("<h3 style='margin-top: 1.5em;'>⏱️ SOS Time Metrics</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>⏱️ SOS Time Metrics</h3>", unsafe_allow_html=True)
 for label, value in sos_metrics.items():
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric'>{label}</div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # 🛠️ Delay Reasons
 st.markdown("<h3 style='margin-top: 1.5em;'>🛠️ Delay Reasons </h3>", unsafe_allow_html=True)

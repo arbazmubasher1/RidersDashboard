@@ -250,7 +250,7 @@ for status, count in closing_status_counts.items():
         st.markdown(f"<div class='card-metric'>{status}</div>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div class='card-metric-value'>{count}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+#t.markdown("</div>", unsafe_allow_html=True)
 
 
 st.markdown("---")

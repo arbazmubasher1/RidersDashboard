@@ -411,26 +411,41 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Summary Dictionary ---
+# --- Cancelled Order Breakdown ---
+cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
+cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
+
+# --- Adjusted Payment Totals (Net of Cancellations) ---
+cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
+card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
+
+# --- Zeeshan logic (adjusted COD-based logic) ---
+zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted
+
+# --- Final Net Collection ---
+net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts
+
 invoice_summary = {
-    #"Total Valid Invoices": total_invoices,
+
+invoice_summary = {
     "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
-    "Card Total Amount": f"Rs {card_total:,.0f}",
-    "COD Total Amount": f"Rs {cod_total:,.0f}",
-    "Cancelled Order Amount": f"- Rs {cancelled_amount:,.0f}",
+    "Card Total Amount (Net of Card Cancellations)": f"Rs {card_total:,.0f}",
+    "COD Total Amount (Net of COD Cancellations)": f"Rs {cod_total:,.0f}",
+    "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
+    "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
-    "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",    
+    "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
-    "Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL - Cancelled Amount)":f"{zeeshanvalue}",
+    "Final Net Collection (COD - Payouts - Cash - Cancellations)": f"Rs {zeeshanvalue:,.0f}"
 }
-
 
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
 
 for label, value in invoice_summary.items():
-    is_flash = "Final Net Collection (COD Amount" in label  # Match only the COD-based line
+    is_flash = "Final Net Collection (COD" in label  # Highlight only COD net value
     flash_class = " flash" if is_flash else ""
 
     col1, col2 = st.columns([3, 1])

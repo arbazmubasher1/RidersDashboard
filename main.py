@@ -339,11 +339,11 @@ cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.
 card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
 # --- Zeeshan Logic ---
-zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted
+zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted - cancelled_amount
 
 # --- Final Net Collection Calculation ---
 net_after_cancel = total_amount - cancelled_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted - cancelled_amount
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted
 
 # --- Summary Dictionary ---
 invoice_summary = {

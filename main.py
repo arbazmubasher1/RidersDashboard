@@ -312,7 +312,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
 # 🎯 Compensation Summary
-st.markdown("<div class='card'><h3>Rider Reading Payouts</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>💸 Rider Reading Payouts</h3>", unsafe_allow_html=True)
 filtered_df['80/160'] = pd.to_numeric(filtered_df['80/160'], errors='coerce')
 count_80 = (filtered_df['80/160'] == 80).sum()
 count_160 = (filtered_df['80/160'] == 160).sum()

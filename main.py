@@ -395,6 +395,22 @@ zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted - cancelled_amou
 net_after_cancel = total_amount - cancelled_amount
 final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted
 
+
+st.markdown("""
+    <style>
+        @keyframes flash {
+            0%   { opacity: 1; }
+            50%  { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        .flash {
+            animation: flash 1.5s infinite;
+            color: #fff176;  /* Yellow tint for visibility */
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- Summary Dictionary ---
 invoice_summary = {
     #"Total Valid Invoices": total_invoices,
@@ -407,8 +423,22 @@ invoice_summary = {
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",    
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
-    "Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL - Cancelled Amount)":f"{zeeshanvalue}",
+    #"Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL - Cancelled Amount)":f"{zeeshanvalue}",
 }
+
+st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
+
+for label, value in invoice_summary.items():
+    is_flashing = "Final Net Collection" in label
+    flash_class = " flash" if is_flashing else ""
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Display Summary ---
 for label, value in invoice_summary.items():

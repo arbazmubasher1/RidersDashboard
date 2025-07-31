@@ -210,7 +210,6 @@ else:
 # st.markdown("---")
 
 # --- Header for filtered metrics ---
-st.title("🛵 Rider Delivery Dashboard - P6")
 if selected_riders or selected_invoice_type or selected_shifts:
     st.markdown(
         f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"

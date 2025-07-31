@@ -221,15 +221,22 @@ else:
 
 # st.markdown("---")
 
-# --- Header for filtered metrics ---
+# --- Header with Rider Counts by Shift ---
 if selected_riders or selected_invoice_type or selected_shifts:
+    shift_rider_counts = ""
+    if selected_shifts:
+        for shift in selected_shifts:
+            shift_df = filtered_df[filtered_df['Shift'] == shift]
+            rider_count = shift_df['Rider'].nunique()
+            shift_rider_counts += f"🕑 **{shift}**: {rider_count} rider(s) &nbsp;&nbsp;&nbsp;"
+
     st.markdown(
         f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"
-        f"🧍 **{len(selected_riders)} rider(s) selected** &nbsp;&nbsp;&nbsp;"
-        f"📄 **{', '.join(selected_invoice_type)}** &nbsp;&nbsp;&nbsp;"
-        f"🕑 **{', '.join(selected_shifts) if selected_shifts else 'None'}**",
+        f"{shift_rider_counts}"
+        f"📄 **{', '.join(selected_invoice_type)}**",
         unsafe_allow_html=True
     )
+
 
 
 

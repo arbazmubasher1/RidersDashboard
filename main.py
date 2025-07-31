@@ -177,7 +177,7 @@ else:
 # st.markdown("---")
 
 # --- Header for filtered metrics ---
-st.title("🛵 Rider Delivery Dashboard")
+st.title("🛵 Rider Delivery Dashboard - P6")
 st.markdown(
     f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"
     f"🧍 **{', '.join(selected_riders) if selected_riders else 'All'}** &nbsp;&nbsp;&nbsp;"

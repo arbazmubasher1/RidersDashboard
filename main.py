@@ -224,7 +224,7 @@ closing_status_emojis = {
     "Pending": "⏳"
 }
 
-st.markdown("<h3 style='margin-top: 1.5em;'>🔒 Rider Closing Status</h3>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h3>📢 Rider Closing Status</h3>", unsafe_allow_html=True)
 
 closing_status_counts = filtered_df['Closing Status'].dropna().value_counts()
 

@@ -406,7 +406,7 @@ st.markdown("""
 
         .flash {
             animation: flash 1.5s infinite;
-            color: #fff176;  /* Yellow tint for visibility */
+            color: ##388E3C;  /* Green tint for visibility */
         }
     </style>
 """, unsafe_allow_html=True)

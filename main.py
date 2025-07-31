@@ -250,6 +250,7 @@ for status, count in closing_status_counts.items():
         st.markdown(f"<span style='font-size:16px'>- {status}</span>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{count}</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("---")
 # --- Grouped Metrics (Filtered) ---

@@ -220,23 +220,29 @@ else:
 #         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
 # st.markdown("---")
+# --- Apply shift and rider filters ---
+filtered_shift_df = filtered_df.copy()
 
-# --- Header with Rider Counts by Shift ---
-if selected_riders or selected_invoice_type or selected_shifts:
-    shift_rider_counts = ""
-    if selected_shifts:
-        for shift in selected_shifts:
-            shift_df = filtered_df[filtered_df['Shift'] == shift]
-            rider_count = shift_df['Rider'].nunique()
-            shift_rider_counts += f"🕑 **{shift}**: {rider_count} rider(s) &nbsp;&nbsp;&nbsp;"
+if selected_shifts:
+    filtered_shift_df = filtered_shift_df[filtered_shift_df['Shift'].isin(selected_shifts)]
 
-    st.markdown(
-        f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"
-        f"{shift_rider_counts}"
-        f"📄 **{', '.join(selected_invoice_type)}**",
-        unsafe_allow_html=True
-    )
+if selected_riders:
+    filtered_shift_df = filtered_shift_df[filtered_shift_df['Rider'].isin(selected_riders)]
 
+# --- Count unique riders per shift ---
+shift_rider_counts = ""
+for shift in sorted(filtered_shift_df['Shift'].unique()):
+    shift_df = filtered_shift_df[filtered_shift_df['Shift'] == shift]
+    rider_count = shift_df['Rider'].nunique()
+    shift_rider_counts += f"🕑 **{shift}**: {rider_count} rider(s) &nbsp;&nbsp;&nbsp;"
+
+# --- Render header ---
+st.markdown(
+    f"📅 **{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}** &nbsp;&nbsp;&nbsp;"
+    f"{shift_rider_counts}"
+    f"📄 **{', '.join(selected_invoice_type)}**",
+    unsafe_allow_html=True
+)
 
 
 

@@ -343,7 +343,7 @@ zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted
 
 # --- Final Net Collection Calculation ---
 net_after_cancel = total_amount - cancelled_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted - cancelled_amount
 
 # --- Summary Dictionary ---
 invoice_summary = {
@@ -356,7 +356,7 @@ invoice_summary = {
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",    
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
-    "Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL)":f"{zeeshanvalue}",
+    "Final Net Collection (COD Amount - Rider Payout - Rider Cash Submitted to DFPL - Cancelled Amount)":f"{zeeshanvalue}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}"
 }
 

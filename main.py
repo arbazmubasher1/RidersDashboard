@@ -226,8 +226,7 @@ else:
 
 # --- Group by Trade Area ---
 trade_area_sales = (
-    df_for_chart.groupby("Trade Area")["Total Amount"]
-    .sum()
+    df_for_chart.groupby("Trade Area").size()
     .reset_index()
     .sort_values("Total Amount", ascending=False)
 )
@@ -238,8 +237,8 @@ st.markdown(f"### 📊 Trade Area Sales{title_suffix}")
 if not trade_area_sales.empty:
     bar_chart = alt.Chart(trade_area_sales).mark_bar().encode(
         x=alt.X("Trade Area:N", sort='-y', title="Trade Area"),
-        y=alt.Y("Total Amount:Q", title="Total Sales (PKR)"),
-        tooltip=["Trade Area", "Total Amount"]
+        y=alt.Y("Total Number of Orders:Q", title="Total Sales (PKR)"),
+        tooltip=["Trade Area", "Total Number of Orders"]
     ).properties(
         width=700,
         height=400

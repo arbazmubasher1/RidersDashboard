@@ -190,7 +190,7 @@ import altair as alt
 filtered_df.columns = filtered_df.columns.str.strip()
 
 # --- DEBUG: Show all column names (optional; you can comment this later) ---
-st.write("Available columns:", filtered_df.columns.tolist())
+#st.write("Available columns:", filtered_df.columns.tolist())
 
 # --- Set the correct column name that holds time like '12:40:00 PM' ---
 invoice_col = None

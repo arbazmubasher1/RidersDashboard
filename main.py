@@ -179,15 +179,25 @@ filtered_df = df[
 
 import altair as alt
 
-# --- Ensure 'Invoice Time' column is in correct format ---
-if 'Invoice Time' in filtered_df.columns:
-    # Convert "12:40:00 PM" to datetime object using 12-hour format
-    filtered_df['Invoice Time'] = pd.to_datetime(
-        filtered_df['Invoice Time'], format="%I:%M:%S %p", errors='coerce'
+# === Sanitize column names just in case ===
+filtered_df.columns = filtered_df.columns.str.strip()
+
+# --- DEBUG: Show all column names (optional; you can comment this later) ---
+st.write("Available columns:", filtered_df.columns.tolist())
+
+# --- Set the correct column name that holds time like '12:40:00 PM' ---
+invoice_col = None
+for col in filtered_df.columns:
+    if "invoice time" in col.lower():  # case-insensitive match
+        invoice_col = col
+        break
+
+if invoice_col:
+    # Convert time strings like "12:40:00 PM" to datetime.time objects
+    filtered_df[invoice_col] = pd.to_datetime(
+        filtered_df[invoice_col], format="%I:%M:%S %p", errors='coerce'
     )
-    
-    # Extract hour for grouping
-    filtered_df['Hour'] = filtered_df['Invoice Time'].dt.hour
+    filtered_df['Hour'] = filtered_df[invoice_col].dt.hour
 else:
     st.warning("⚠️ 'Invoice Time' column not found.")
     filtered_df['Hour'] = None
@@ -218,19 +228,22 @@ trade_area_sales = (
 # --- Plot ---
 st.markdown(f"### 📊 Trade Area Sales{title_suffix}")
 
-bar_chart = alt.Chart(trade_area_sales).mark_bar().encode(
-    x=alt.X("Trade Area:N", sort='-y', title="Trade Area"),
-    y=alt.Y("Total Amount:Q", title="Total Sales (PKR)"),
-    tooltip=["Trade Area", "Total Amount"]
-).properties(
-    width=700,
-    height=400
-).configure_axis(
-    labelFontSize=12,
-    titleFontSize=14
-)
+if not trade_area_sales.empty:
+    bar_chart = alt.Chart(trade_area_sales).mark_bar().encode(
+        x=alt.X("Trade Area:N", sort='-y', title="Trade Area"),
+        y=alt.Y("Total Amount:Q", title="Total Sales (PKR)"),
+        tooltip=["Trade Area", "Total Amount"]
+    ).properties(
+        width=700,
+        height=400
+    ).configure_axis(
+        labelFontSize=12,
+        titleFontSize=14
+    )
 
-st.altair_chart(bar_chart, use_container_width=True)
+    st.altair_chart(bar_chart, use_container_width=True)
+else:
+    st.info("No data available for the selected hour or filters.")
 
 
 

@@ -186,29 +186,6 @@ filtered_df = df[
 
 import altair as alt
 
-# === Sanitize column names just in case ===
-filtered_df.columns = filtered_df.columns.str.strip()
-
-# --- DEBUG: Show all column names (optional; you can comment this later) ---
-#st.write("Available columns:", filtered_df.columns.tolist())
-
-# --- Set the correct column name that holds time like '12:40:00 PM' ---
-invoice_col = None
-for col in filtered_df.columns:
-    if "invoice time" in col.lower():  # case-insensitive match
-        invoice_col = col
-        break
-
-if invoice_col:
-    # Convert time strings like "12:40:00 PM" to datetime.time objects
-    filtered_df[invoice_col] = pd.to_datetime(
-        filtered_df[invoice_col], format="%I:%M:%S %p", errors='coerce'
-    )
-    filtered_df['Hour'] = filtered_df[invoice_col].dt.hour
-else:
-    st.warning("⚠️ 'Invoice Time' column not found.")
-    filtered_df['Hour'] = None
-
 # --- Drop rows missing Trade Area or Hour ---
 filtered_df_chart = filtered_df.dropna(subset=['Trade Area', 'Hour'])
 
@@ -224,21 +201,22 @@ else:
     df_for_chart = filtered_df_chart.copy()
     title_suffix = " (All Hours Combined)"
 
-# --- Group by Trade Area ---
-trade_area_sales = (
-    df_for_chart.groupby("Trade Area").size()
-    .reset_index()
-    .sort_values("Total Amount", ascending=False)
+# --- Group by Trade Area and count orders ---
+trade_area_orders = (
+    df_for_chart.groupby("Trade Area")
+    .size()
+    .reset_index(name="Order Count")
+    .sort_values("Order Count", ascending=False)
 )
 
 # --- Plot ---
-st.markdown(f"### 📊 Trade Area Sales{title_suffix}")
+st.markdown(f"### 📦 Order Volume by Trade Area{title_suffix}")
 
-if not trade_area_sales.empty:
-    bar_chart = alt.Chart(trade_area_sales).mark_bar().encode(
+if not trade_area_orders.empty:
+    bar_chart = alt.Chart(trade_area_orders).mark_bar().encode(
         x=alt.X("Trade Area:N", sort='-y', title="Trade Area"),
-        y=alt.Y("Total Number of Orders:Q", title="Total Sales (PKR)"),
-        tooltip=["Trade Area", "Total Number of Orders"]
+        y=alt.Y("Order Count:Q", title="Number of Orders"),
+        tooltip=["Trade Area", "Order Count"]
     ).properties(
         width=700,
         height=400
@@ -249,7 +227,7 @@ if not trade_area_sales.empty:
 
     st.altair_chart(bar_chart, use_container_width=True)
 else:
-    st.info("No data available for the selected hour or filters.")
+    st.info("No orders available for the selected hour or filters.")
 
 
 

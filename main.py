@@ -213,7 +213,7 @@ trade_area_orders = (
 st.markdown(f"### 📦 Order Volume by Trade Area{title_suffix}")
 
 if not trade_area_orders.empty:
-    bar_chart = alt.Chart(trade_area_orders).mark_bar().encode(
+     bar_chart = alt.Chart(trade_area_orders).mark_bar(color="#c62828").encode(
         x=alt.X("Trade Area:N", sort='-y', title="Trade Area"),
         y=alt.Y("Order Count:Q", title="Number of Orders"),
         tooltip=["Trade Area", "Order Count"]

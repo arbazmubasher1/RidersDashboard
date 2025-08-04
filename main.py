@@ -181,7 +181,8 @@ import altair as alt
 
 # --- Ensure 'Invoice Time' column exists and is datetime ---
 if 'Invoice Time' in filtered_df.columns:
-    filtered_df['Invoice Time'] = pd.to_datetime(filtered_df['Invoice Time'], errors='coerce')
+    filtered_df['Invoice Time'] = pd.to_datetime( filtered_df['Invoice Time'], format="%I:%M:%S %p", errors='coerce')
+    
     filtered_df['Hour'] = filtered_df['Invoice Time'].dt.hour
 else:
     st.warning("⚠️ 'Invoice Time' column not found.")

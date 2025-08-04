@@ -177,6 +177,49 @@ filtered_df = df[
 ]
 
 
+import altair as alt
+
+# --- Ensure Date column includes time ---
+if not pd.api.types.is_datetime64_any_dtype(filtered_df["Date"]):
+    filtered_df["Date"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+
+# --- Extract hour from timestamp ---
+filtered_df["Hour"] = filtered_df["Date"].dt.hour
+
+# --- Optional: Filter invalid or missing Trade Area ---
+filtered_df = filtered_df[filtered_df["Trade Area"].notna()]
+
+# --- Group by Trade Area and Hour ---
+hourly_sales = (
+    filtered_df.groupby(["Trade Area", "Hour"])["Total Amount"]
+    .sum()
+    .reset_index()
+    .sort_values(["Trade Area", "Hour"])
+)
+
+# --- Allow selecting Trade Area ---
+selected_area = st.selectbox("Select Trade Area for Hourly Sales", sorted(filtered_df["Trade Area"].unique()))
+
+# --- Filter for selected area ---
+area_df = hourly_sales[hourly_sales["Trade Area"] == selected_area]
+
+# --- Plot bar chart ---
+st.markdown(f"### ⏰ Hourly Sales for {selected_area}")
+bar_chart = alt.Chart(area_df).mark_bar().encode(
+    x=alt.X("Hour:O", title="Hour of Day"),
+    y=alt.Y("Total Amount:Q", title="Total Sales (PKR)"),
+    tooltip=["Hour", "Total Amount"]
+).properties(
+    width=700,
+    height=400
+).configure_axis(
+    labelFontSize=12,
+    titleFontSize=14
+)
+
+st.altair_chart(bar_chart, use_container_width=True)
+
+
 
 # # --- Consolidated Overview (Unfiltered except by Date & Shift) ---
 # st.markdown("## 📦 Consolidated Overview (By Date & Shift)", unsafe_allow_html=True)

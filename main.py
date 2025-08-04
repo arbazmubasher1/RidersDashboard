@@ -179,15 +179,20 @@ filtered_df = df[
 
 import altair as alt
 
-# --- Ensure 'Invoice Time' column exists and is datetime ---
+# --- Ensure 'Invoice Time' column is in correct format ---
 if 'Invoice Time' in filtered_df.columns:
-    filtered_df['Invoice Time'] = pd.to_datetime( filtered_df['Invoice Time'], format="%I:%M:%S %p", errors='coerce')
+    # Convert "12:40:00 PM" to datetime object using 12-hour format
+    filtered_df['Invoice Time'] = pd.to_datetime(
+        filtered_df['Invoice Time'], format="%I:%M:%S %p", errors='coerce'
+    )
+    
+    # Extract hour for grouping
     filtered_df['Hour'] = filtered_df['Invoice Time'].dt.hour
 else:
     st.warning("⚠️ 'Invoice Time' column not found.")
     filtered_df['Hour'] = None
 
-# --- Drop rows with missing Trade Area or Invoice Time ---
+# --- Drop rows missing Trade Area or Hour ---
 filtered_df_chart = filtered_df.dropna(subset=['Trade Area', 'Hour'])
 
 # --- Select hour filter ---

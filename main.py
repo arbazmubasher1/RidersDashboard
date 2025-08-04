@@ -179,36 +179,38 @@ filtered_df = df[
 
 import altair as alt
 
-# --- Ensure Date column includes time ---
-if not pd.api.types.is_datetime64_any_dtype(filtered_df["Date"]):
-    filtered_df["Date"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-
-# --- Extract hour from timestamp ---
+# Ensure datetime and clean data
+filtered_df["Date"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+filtered_df = filtered_df[filtered_df["Trade Area"].notna()]
 filtered_df["Hour"] = filtered_df["Date"].dt.hour
 
-# --- Optional: Filter invalid or missing Trade Area ---
-filtered_df = filtered_df[filtered_df["Trade Area"].notna()]
+# Optional: show bar chart for a specific hour or all combined
+all_hours = sorted(filtered_df["Hour"].dropna().unique())
+selected_hour = st.selectbox("Select Hour (or skip to show all combined)", options=["All"] + all_hours)
 
-# --- Group by Trade Area and Hour ---
-hourly_sales = (
-    filtered_df.groupby(["Trade Area", "Hour"])["Total Amount"]
+# Filter by selected hour if chosen
+if selected_hour != "All":
+    df_for_chart = filtered_df[filtered_df["Hour"] == selected_hour]
+    title_suffix = f"at {selected_hour}:00"
+else:
+    df_for_chart = filtered_df.copy()
+    title_suffix = "(All Hours Combined)"
+
+# Group by Trade Area
+trade_area_sales = (
+    df_for_chart.groupby("Trade Area")["Total Amount"]
     .sum()
     .reset_index()
-    .sort_values(["Trade Area", "Hour"])
+    .sort_values("Total Amount", ascending=False)
 )
 
-# --- Allow selecting Trade Area ---
-selected_area = st.selectbox("Select Trade Area for Hourly Sales", sorted(filtered_df["Trade Area"].unique()))
+# Plot
+st.markdown(f"### 📊 Trade Area-wise Sales {title_suffix}")
 
-# --- Filter for selected area ---
-area_df = hourly_sales[hourly_sales["Trade Area"] == selected_area]
-
-# --- Plot bar chart ---
-st.markdown(f"### ⏰ Hourly Sales for {selected_area}")
-bar_chart = alt.Chart(area_df).mark_bar().encode(
-    x=alt.X("Hour:O", title="Hour of Day"),
+chart = alt.Chart(trade_area_sales).mark_bar().encode(
+    x=alt.X("Trade Area:N", sort='-y', title="Trade Area"),
     y=alt.Y("Total Amount:Q", title="Total Sales (PKR)"),
-    tooltip=["Hour", "Total Amount"]
+    tooltip=["Trade Area", "Total Amount"]
 ).properties(
     width=700,
     height=400
@@ -217,7 +219,7 @@ bar_chart = alt.Chart(area_df).mark_bar().encode(
     titleFontSize=14
 )
 
-st.altair_chart(bar_chart, use_container_width=True)
+st.altair_chart(chart, use_container_width=True)
 
 
 

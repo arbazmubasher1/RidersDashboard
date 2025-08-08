@@ -22,14 +22,13 @@ sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvC
 worksheet = sheet.worksheet("For Dashboard")
 
 
-# --- Function to format time ---
 def format_timedelta(td):
     if pd.isnull(td):
-        return "00:00:00.00"
-    total_seconds = td.total_seconds()
+        return "00:00:00"
+    total_seconds = int(td.total_seconds())  # drop fractional part
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
-    return f"{int(hours):02}:{int(minutes):02}:{seconds:05.2f}"
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
 def safe_time_average(series):
     valid = series[(series.notna()) & (series.dt.total_seconds() > 0)]

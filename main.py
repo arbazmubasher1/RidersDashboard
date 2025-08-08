@@ -132,47 +132,97 @@ st.sidebar.markdown(
 )
 
 
-st.sidebar.header("🔍 Search Filters")
+# -----------------------------
+# ⏱ Cascading sidebar filters
+# -----------------------------
 
+st.sidebar.header("🔍 Search Filters")
 
 if st.sidebar.button("🔄 Reload Sheet"):
     st.cache_data.clear()
 
 df, last_updated = load_data()
 
-# Date Range
-start_date, end_date = st.sidebar.date_input("Select Date Range", [df['Date'].min(), df['Date'].max()])
+# 1) Date range first (drives everything else)
+min_date = pd.to_datetime(df['Date'].min())
+max_date = pd.to_datetime(df['Date'].max())
+start_date, end_date = st.sidebar.date_input(
+    "Select Date Range",
+    [min_date, max_date]
+)
 
-# Rider Filter
-rider_options = sorted(df['Rider Name/Code'].dropna().unique())
-# Initialize selected riders in session state if not present
+# Always build from the top: date -> invoice -> shift -> rider
+base = df[(df['Date'] >= pd.to_datetime(start_date)) &
+          (df['Date'] <= pd.to_datetime(end_date))].copy()
+
+# Keep session state keys predictable
+if 'selected_invoice_type' not in st.session_state:
+    st.session_state.selected_invoice_type = sorted(base['Invoice Type'].dropna().unique().tolist())
+
+if 'selected_shifts' not in st.session_state:
+    st.session_state.selected_shifts = sorted(base['Shift Type'].dropna().unique().tolist())
+
 if 'selected_riders' not in st.session_state:
-    st.session_state.selected_riders = rider_options
+    st.session_state.selected_riders = sorted(base['Rider Name/Code'].dropna().unique().tolist())
 
 
+# 2) Invoice Type options (depends on date range)
+invoice_type_options = sorted(base['Invoice Type'].dropna().unique().tolist())
+# Keep only still-valid selections; if nothing left, default to all
+prev_invoice = set(st.session_state.selected_invoice_type)
+default_invoice = sorted(prev_invoice & set(invoice_type_options)) or invoice_type_options
 
-# Buttons to modify session state
-col1, col2 = st.sidebar.columns(2)
-with col1:
+selected_invoice_type = st.sidebar.multiselect(
+    "Select Invoice Type(s)",
+    options=invoice_type_options,
+    default=default_invoice,
+    key="invoice_multiselect"
+)
+st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
+
+lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if st.session_state.selected_invoice_type else base
+
+
+# 3) Shift options (depend on date + invoice type)
+shift_options = sorted(lvl1['Shift Type'].dropna().unique().tolist())
+prev_shifts = set(st.session_state.selected_shifts)
+default_shifts = sorted(prev_shifts & set(shift_options)) or shift_options
+
+selected_shifts = st.sidebar.multiselect(
+    "Select Shift(s)",
+    options=shift_options,
+    default=default_shifts,
+    key="shift_multiselect"
+)
+st.session_state.selected_shifts = selected_shifts or shift_options
+
+lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if st.session_state.selected_shifts else lvl1
+
+
+# 4) Rider options (depend on date + invoice type + shift)
+rider_options = sorted(lvl2['Rider Name/Code'].dropna().unique().tolist())
+prev_riders = set(st.session_state.selected_riders)
+default_riders = sorted(prev_riders & set(rider_options)) or rider_options
+
+# Buttons reflect CURRENT option set
+c1, c2 = st.sidebar.columns(2)
+with c1:
     if st.button("Select All Riders"):
         st.session_state.selected_riders = rider_options
-with col2:
+with c2:
     if st.button("Clear All Riders"):
         st.session_state.selected_riders = []
 
-# Rider multiselect using session state
 selected_riders = st.sidebar.multiselect(
-    "Select Rider(s)", rider_options, default=st.session_state.selected_riders, key="rider_multiselect"
+    "Select Rider(s)",
+    options=rider_options,
+    default=st.session_state.selected_riders if set(st.session_state.selected_riders) <= set(rider_options) else default_riders,
+    key="rider_multiselect"
 )
 st.session_state.selected_riders = selected_riders
 
-# Invoice Type Filter
-invoice_type_options = sorted(df['Invoice Type'].dropna().unique())
-selected_invoice_type = st.sidebar.multiselect("Select Invoice Type(s)", invoice_type_options, default=invoice_type_options)
-
-# Shift Type Filter
-shift_options = sorted(df['Shift Type'].dropna().unique())
-selected_shifts = st.sidebar.multiselect("Select Shift(s)", shift_options, default=shift_options)
+# 👉 FINAL filtered df (use all three cascading selections)
+filtered_df = lvl2[lvl2['Rider Name/Code'].isin(st.session_state.selected_riders)] if st.session_state.selected_riders else lvl2
 
 # Apply filters with fallbacks
 filtered_df = df[

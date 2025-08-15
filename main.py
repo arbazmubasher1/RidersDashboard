@@ -9,17 +9,40 @@ import altair as alt
 # =========================
 # ---------- AUTH ----------
 # =========================
-PHASE_NAME = "Phase 6"   # shown on the login screen
 IDLE_TIMEOUT_MIN = 45    # auto-logout after X minutes of inactivity (set None to disable)
 
 # ❗ Fixed users & passwords (edit these)
 USERS = {
     # "username": "password"
     "p6": "123",
-    "irfaan": "p6-ops-2025",
+    "emp": "emp123",
     "zeeshan": "p6-view",
     # add more users here...
 }
+
+# 📊 Data sources mapped to usernames or "default"
+DATA_SOURCES = {
+    # Emporium user → Emporium sheet
+    "emp": {
+        "sheet_url": "https://docs.google.com/spreadsheets/d/1I2sIaAJxrNQIRHAmRTXthqtG1DH6Zep7Hnsa42UZmkk/edit#gid=1740157752",
+        "worksheet": "For Dashboard",
+        "phase": "Emporium",
+        "title": "🛵 Rider Delivery Dashboard – Emporium",
+        "brand": "Johnny & Jugnu",
+    },
+    # Default (all other users) → Phase 6 sheet
+    "default": {
+        "sheet_url": "https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit",
+        "worksheet": "For Dashboard",
+        "phase": "Phase 6",
+        "title": "🛵 Rider Delivery Dashboard – P6",
+        "brand": "Johnny & Jugnu",
+    },
+}
+
+def _resolve_profile(username: str) -> dict:
+    """Pick a data profile based on username, falling back to default."""
+    return DATA_SOURCES.get(username, DATA_SOURCES["default"])
 
 def _authed() -> bool:
     """Return True if currently authenticated (and not idle-timed-out)."""
@@ -37,11 +60,13 @@ def _authed() -> bool:
     return True
 
 def _login_ui():
+    # Use default title on login screen
+    default_title = DATA_SOURCES["default"]["title"]
     st.markdown(
         f"""
         <div style="text-align:center;margin-top:6vh">
-          <h1 style="margin-bottom:0.5em">🛡️ {PHASE_NAME} Access</h1>
-          <p style="color:#666">Enter your credentials to view the P6 Rider Delivery Dashboard.</p>
+          <h1 style="margin-bottom:0.5em">🛡️ Riders Dashboard Access</h1>
+          <p style="color:#666">Enter your credentials to view: <b>{default_title}</b> or the Emporium dashboard.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -52,13 +77,19 @@ def _login_ui():
         submit = st.form_submit_button("Login")
 
     if submit:
-        # simple fixed dictionary check
         user_ok = username.strip() in USERS
         pass_ok = USERS.get(username.strip(), None) == password
         if user_ok and pass_ok:
+            prof = _resolve_profile(username.strip())
+            # Store session profile so the rest of the app can read it
             st.session_state["authed"] = True
             st.session_state["username"] = username.strip()
             st.session_state["last_activity"] = datetime.utcnow()
+            st.session_state["sheet_url"] = prof["sheet_url"]
+            st.session_state["worksheet"] = prof["worksheet"]
+            st.session_state["phase"] = prof["phase"]
+            st.session_state["title"] = prof["title"]
+            st.session_state["brand"] = prof["brand"]
             st.success("Authenticated. Loading dashboard…")
             st.rerun()
         else:
@@ -70,8 +101,9 @@ if not _authed():
     st.stop()
 
 # Sidebar session header + logout
+phase_label = st.session_state.get("phase", _resolve_profile("default")["phase"])
 with st.sidebar:
-    st.caption(f"Signed in as **{st.session_state.get('username','(user)')}** · {PHASE_NAME}")
+    st.caption(f"Signed in as **{st.session_state.get('username','(user)')}** · {phase_label}")
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
@@ -83,11 +115,10 @@ with st.sidebar:
 # -----------------------------
 # Google Sheets / Data Loading
 # -----------------------------
-
 # Define required scopes
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-# Load credentials from Streamlit secrets (only for Google Sheets, not for login)
+# Load credentials from Streamlit secrets (only for Google Sheets)
 creds_dict = st.secrets["gcp_service_account"]
 
 # Create credentials with proper scopes
@@ -96,9 +127,12 @@ credentials = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 # Authorize with gspread
 gc = gspread.authorize(credentials)
 
-# Open spreadsheet and worksheet
-sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit")
-worksheet = sheet.worksheet("For Dashboard")
+# Open spreadsheet and worksheet based on logged-in user's profile
+SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
+WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
+
+sheet = gc.open_by_url(SHEET_URL)
+worksheet = sheet.worksheet(WORKSHEET_NAME)
 
 def format_timedelta(td):
     if pd.isnull(td):
@@ -113,9 +147,9 @@ def safe_time_average(series):
     return format_timedelta(valid.mean()) if not valid.empty else "00:00:00"
 
 @st.cache_data(ttl=600)
-def load_data():
+def load_data(_worksheet):
     df = get_as_dataframe(
-        worksheet,
+        _worksheet,
         evaluate_formulas=True,
         include_tailing_empty=False,
         default_blank=""
@@ -161,13 +195,15 @@ def load_data():
 
     return df, datetime.now()
 
-
 # ----------------
 # Page setup / UI
 # ----------------
-st.markdown("""
+page_title = st.session_state.get("title", DATA_SOURCES["default"]["title"])
+brand_name = st.session_state.get("brand", DATA_SOURCES["default"]["brand"])
+
+st.markdown(f"""
     <h1 style='text-align: center; color: #c62828; font-size: 42px; font-weight: bold; margin-bottom: 1em;'>
-        🛵 Rider Delivery Dashboard – P6
+        {page_title}
     </h1>
 """, unsafe_allow_html=True)
 
@@ -201,10 +237,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.sidebar.markdown(
-    """
+    f"""
     <div style="text-align: center; margin-bottom: 1em;">
         <img src="https://raw.githubusercontent.com/arbazmubasher1/RidersDashboard/main/logo%20JJ%20....png" width="180">
-        <p style="color: grey; font-size: 14px; margin-top: 0.5em;">Johnny & Jugnu</p>
+        <p style="color: grey; font-size: 14px; margin-top: 0.5em;">{brand_name}</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -218,7 +254,7 @@ st.sidebar.header("🔍 Search Filters")
 if st.sidebar.button("🔄 Reload Sheet"):
     st.cache_data.clear()
 
-df, last_updated = load_data()
+df, last_updated = load_data(worksheet)
 
 # 1) Date range first (drives everything else)
 min_date = pd.to_datetime(df['Date'].min())

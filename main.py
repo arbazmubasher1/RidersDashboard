@@ -479,84 +479,71 @@ for inv_type, row in comp_summary.iterrows():
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# -----------------------------
-# 💰 Invoice Summary (with Emporium 50/10 adjustment)
-# -----------------------------
-# Complaint/Staff Tab exclusion set
-complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
-complaint_amount = complaint_df['Total Amount'].sum()
+# ================= Invoice Summary =================
 
-staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab order']
-staff_tab_amount = staff_tab_df['Total Amount'].sum()
+# Exclude only complaint orders from main total (staff/pr tabs included here for visibility)
+filtered_df_valid = filtered_df[
+    filtered_df['Invoice Type'].str.lower() != 'complaint order'
+]
 
-pr_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']
-pr_tab_amount = pr_tab_df['Total Amount'].sum()
-
-filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
+# Total amount for all valid orders (excluding complaint orders)
 total_amount = filtered_df_valid['Total Amount'].sum()
 
+# Staff Tab & PR Tab amounts
+staff_tab_amount = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab order']['Total Amount'].sum()
+pr_tab_amount = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']['Total Amount'].sum()
+
+# Complaint amount
+complaint_amount = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']['Total Amount'].sum()
+
+# Cancelled COD & CARD amounts
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
-cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
-
-rider_payouts = filtered_df['80/160'].sum()
-rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
-
-# Cancel breakdowns
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
 cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
-# Base payment totals (net of cancellations)
+# COD & Card totals after cancellations
 cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
 card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
 
-# 🔻 Emporium-only adjustment: subtract "50/10" column from COD total
+# --- Emporium-only 50/10 adjustment ---
 fifty_ten_total = 0.0
 if st.session_state.get("username", "").lower() == "emp":
-    # use the same filtered range (date/rider/invoice type/shift), but do NOT exclude complaint/staff tab unless required
-    # If you want to exclude them too, change filtered_df -> filtered_df_valid below
     fifty_ten_total = pd.to_numeric(filtered_df["50/10"], errors="coerce").fillna(0).sum()
-    cod_total = cod_total - fifty_ten_total  # adjust COD net
+    cod_total -= fifty_ten_total  # Adjust COD total
 
-# Final net collection (unchanged logic)
+# --- Rider Cash Submitted ---
+# (Assuming rider cash submitted is in a column "Rider Cash Submitted")
+rider_cash_submitted = pd.to_numeric(filtered_df.get("Rider Cash Submitted", 0), errors="coerce").fillna(0).sum()
+
+# Net after cancellations
 net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount
 
-st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
+# Final Net Collection (subtract staff/pr tabs only once)
+final_net_collection = (
+    net_after_cancel
+    - complaint_amount
+    - staff_tab_amount
+    - pr_tab_amount
+    - rider_cash_submitted
+    - rider_payouts
+)
 
-# Build summary dict with conditional label/line for 50/10
-invoice_summary = {
-    "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
-    "Card Total Amount (Net of Card Cancellations)": f"Rs {card_total:,.0f}",
-}
+# --- Display in cards ---
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Total Amount", f"{total_amount:,.0f}")
+with col2:
+    st.metric("COD Total (Net of Cancels)", f"{cod_total:,.0f}")
+with col3:
+    st.metric("Card Total (Net of Cancels)", f"{card_total:,.0f}")
+with col4:
+    st.metric("50/10 Adjustment", f"{fifty_ten_total:,.0f}")
 
-if st.session_state.get("username", "").lower() == "emp":
-    invoice_summary["50/10 Adjustment (Emporium)"] = f"- Rs {fifty_ten_total:,.0f}"
-    invoice_summary["COD Total Amount (Net of COD Cancellations, Adj - 50/10)"] = f"Rs {cod_total:,.0f}"
-else:
-    invoice_summary["COD Total Amount (Net of COD Cancellations)"] = f"Rs {cod_total:,.0f}"
-
-# continue the common lines
-invoice_summary.update({
-    "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
-    "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
-    "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
-    "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
-    "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",
-    "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
-    "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
-    "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
-    "Final Net Collection (All Adjustments)": f"Rs {final_net_collection:,.0f}",
-})
-
-for label, value in invoice_summary.items():
-    is_flash = "Final Net Collection (All Adjustments)" in label
-    flash_class = " flash" if is_flash else ""
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+# Extra metrics
+st.metric("Staff Tab Amount", f"{staff_tab_amount:,.0f}")
+st.metric("PR Tab Amount", f"{pr_tab_amount:,.0f}")
+st.metric("Rider Cash Submitted", f"{rider_cash_submitted:,.0f}")
+st.metric("Final Net Collection", f"{final_net_collection:,.0f}")
 
 # -----------------------------
 # 📢 Cancelled Orders by Invoice Type

@@ -527,6 +527,9 @@ st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html
 
 invoice_summary = {
     "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
+    "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",
+    "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
+    "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
     "Card Total Amount (Net of Card Cancellations)": f"Rs {card_total:,.0f}",
 }
 
@@ -539,9 +542,6 @@ else:
 invoice_summary.update({
     "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
     "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
-    "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
-    "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
-    "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
@@ -558,6 +558,7 @@ for label, value in invoice_summary.items():
         st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
+
 # -----------------------------
 # 📢 Cancelled Orders by Invoice Type
 # -----------------------------

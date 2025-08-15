@@ -487,11 +487,16 @@ st.markdown("</div>", unsafe_allow_html=True)
 complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
 complaint_amount = complaint_df['Total Amount'].sum()
 
-staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab order']
+staff_tab_df = filtered_df[
+    filtered_df['Invoice Type'].str.strip().str.lower().str.contains('staff tab', na=False)
+]
 staff_tab_amount = staff_tab_df['Total Amount'].sum()
 
-pr_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']
+pr_tab_df = filtered_df[
+    filtered_df['Invoice Type'].str.strip().str.lower().str.contains('pr tab', na=False)
+]
 pr_tab_amount = pr_tab_df['Total Amount'].sum()
+
 
 filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
 total_amount = filtered_df_valid['Total Amount'].sum()

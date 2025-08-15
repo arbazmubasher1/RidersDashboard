@@ -491,6 +491,8 @@ staff_tab_amount = staff_tab_df['Total Amount'].sum()
 
 pr_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']
 pr_tab_amount = pr_tab_df['Total Amount'].sum()
+print("Staff Tab Amount:", staff_tab_amount)
+print("PR Tab Amount:", pr_tab_amount)
 
 filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
 total_amount = filtered_df_valid['Total Amount'].sum()

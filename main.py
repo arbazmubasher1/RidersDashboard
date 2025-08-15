@@ -486,8 +486,11 @@ st.markdown("</div>", unsafe_allow_html=True)
 complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
 complaint_amount = complaint_df['Total Amount'].sum()
 
-staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab']
+staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab order']
 staff_tab_amount = staff_tab_df['Total Amount'].sum()
+
+pr_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']
+pr_tab_amount = pr_tab_df['Total Amount'].sum()
 
 filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
 total_amount = filtered_df_valid['Total Amount'].sum()
@@ -516,7 +519,7 @@ if st.session_state.get("username", "").lower() == "emp":
 
 # Final net collection (unchanged logic)
 net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount
 
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
 
@@ -538,6 +541,7 @@ invoice_summary.update({
     "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
+    "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",

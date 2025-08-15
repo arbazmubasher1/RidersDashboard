@@ -492,35 +492,46 @@ staff_tab_amount = staff_tab_df['Total Amount'].sum()
 pr_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']
 pr_tab_amount = pr_tab_df['Total Amount'].sum()
 
-filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
+# Exclude only complaint orders from the main total
+filtered_df_valid = filtered_df[
+    filtered_df['Invoice Type'].str.lower() != 'complaint order'
+]
+
 total_amount = filtered_df_valid['Total Amount'].sum()
 
+# Staff tab and PR tab amounts
+staff_tab_amount = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab order']['Total Amount'].sum()
+pr_tab_amount = filtered_df[filtered_df['Invoice Type'].str.lower() == 'pr tab']['Total Amount'].sum()
+
+# Complaints
+complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
+complaint_amount = complaint_df['Total Amount'].sum()
+
+# Cancelled COD/CARD amounts
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
-cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
-
-rider_payouts = filtered_df['80/160'].sum()
-rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
-
-# Cancel breakdowns
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
 cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
-# Base payment totals (net of cancellations)
+# Base payment totals
 cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
 card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
 
-# 🔻 Emporium-only adjustment: subtract "50/10" column from COD total
+# Emporium-only 50/10 adjustment
 fifty_ten_total = 0.0
 if st.session_state.get("username", "").lower() == "emp":
-    # use the same filtered range (date/rider/invoice type/shift), but do NOT exclude complaint/staff tab unless required
-    # If you want to exclude them too, change filtered_df -> filtered_df_valid below
     fifty_ten_total = pd.to_numeric(filtered_df["50/10"], errors="coerce").fillna(0).sum()
-    cod_total = cod_total - fifty_ten_total  # adjust COD net
+    cod_total -= fifty_ten_total
 
-# Final net collection (unchanged logic)
+# Final Net Collection (subtracting staff & pr tab now)
 net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount
-
+final_net_collection = (
+    net_after_cancel
+    - complaint_amount
+    - staff_tab_amount
+    - pr_tab_amount
+    - rider_cash_submitted
+    - rider_payouts
+)
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
 
 # Build summary dict with conditional label/line for 50/10

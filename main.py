@@ -88,8 +88,7 @@ def _login_ui():
             st.session_state["phase"] = prof["phase"]
             st.session_state["title"] = prof["title"]
             st.session_state["brand"] = prof["brand"]
-            # clear cached data from any prior session/sheet
-            st.cache_data.clear()
+            st.cache_data.clear()   # clear cached data from any prior user/sheet
             st.success("Authenticated. Loading dashboard…")
             st.rerun()
         else:
@@ -158,7 +157,7 @@ def load_data(sheet_url: str, worksheet_name: str):
         "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
         "Delay Reason", "Customer Complaint", "Order Status",
         "Rider Cash Submission to DFPL", "Closing Status", "Total Promised Time",
-        "Invoice Time", "Trade Area"
+        "Invoice Time", "Trade Area", "50/10"   # <- include 50/10 for Emporium adjustment
     ]
     for col in expected_columns:
         if col not in df.columns:
@@ -172,6 +171,9 @@ def load_data(sheet_url: str, worksheet_name: str):
     df['80/160'] = pd.to_numeric(df['80/160'], errors='coerce').fillna(0).astype(int)
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
     df['Rider Cash Submission to DFPL'] = pd.to_numeric(df['Rider Cash Submission to DFPL'], errors='coerce').fillna(0).astype(int)
+
+    # "50/10" may be per-order numeric; make numeric
+    df['50/10'] = pd.to_numeric(df['50/10'], errors='coerce').fillna(0)
 
     df['Invoice Time'] = pd.to_datetime(df['Invoice Time'], format="%I:%M:%S %p", errors='coerce')
     df['Hour'] = df['Invoice Time'].dt.hour
@@ -213,9 +215,7 @@ st.markdown("""
             text-align: right;
             font-weight: bold;
         }
-        .card-metric span {
-            color: white;
-        }
+        .card-metric span { color: white; }
         @keyframes flash { 0% {opacity:1;} 50% {opacity:0.2;} 100% {opacity:1;} }
         .flash { animation: flash 1.5s infinite; color: #4CAF50; }
     </style>
@@ -315,7 +315,7 @@ filtered_df = df[
 ]
 
 # -----------------------------
-# 📦 Selection summary band (styled red card)
+# 📌 Selection summary band
 # -----------------------------
 if selected_riders or selected_invoice_type or selected_shifts:
     st.markdown(
@@ -368,7 +368,7 @@ else:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 📢 Rider Closing Status (card)
+# 📢 Rider Closing Status
 # -----------------------------
 st.markdown("<div class='card'><h3>📢 Rider Closing Status</h3>", unsafe_allow_html=True)
 closing_status_counts = filtered_df['Closing Status'].dropna().value_counts()
@@ -381,7 +381,7 @@ for label, value in closing_status_counts.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 📊 Basic Information (card)
+# 📊 Basic Information
 # -----------------------------
 basic_metrics = {
     "Total Orders": len(filtered_df),
@@ -399,7 +399,7 @@ for label, value in basic_metrics.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# ⏱️ SOS Time Metrics (card)
+# ⏱️ SOS Time Metrics
 # -----------------------------
 sos_metrics = {
     "Avg Kitchen Time": format_timedelta(filtered_df['Total Kitchen Time'].mean()),
@@ -419,7 +419,7 @@ for label, value in sos_metrics.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 🛠️ Delay Reasons (card)
+# 🛠️ Delay Reasons
 # -----------------------------
 st.markdown("<div class='card'><h3>🛠️ Delay Reasons</h3>", unsafe_allow_html=True)
 for reason in filtered_df['Delay Reason'].dropna().unique():
@@ -432,7 +432,7 @@ for reason in filtered_df['Delay Reason'].dropna().unique():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 📢 Customer Complaints (card)
+# 📢 Customer Complaints
 # -----------------------------
 st.markdown("<div class='card'><h3>📢 Customer Complaints</h3>", unsafe_allow_html=True)
 for complaint in filtered_df['Customer Complaint'].dropna().unique():
@@ -445,14 +445,13 @@ for complaint in filtered_df['Customer Complaint'].dropna().unique():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 💸 Rider Reading Payouts (card)
+# 💸 Rider Reading Payouts
 # -----------------------------
 st.markdown("<div class='card'><h3>💸 Rider Reading Payouts</h3>", unsafe_allow_html=True)
 filtered_df['80/160'] = pd.to_numeric(filtered_df['80/160'], errors='coerce')
 count_80 = (filtered_df['80/160'] == 80).sum()
 count_160 = (filtered_df['80/160'] == 160).sum()
 total_comp = filtered_df['80/160'].sum()
-
 labels = {
     "80-PKR entries": count_80,
     "160-PKR entries": count_160,
@@ -470,7 +469,6 @@ comp_summary = (
     .agg(Order_Count=('Invoice Type', 'count'), Payout=('80/160', 'sum'))
     .sort_values('Payout', ascending=False)
 )
-
 for inv_type, row in comp_summary.iterrows():
     label = f"{inv_type} (Count: {row['Order_Count']})"
     value = f"{row['Payout']} PKR"
@@ -482,8 +480,9 @@ for inv_type, row in comp_summary.iterrows():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 💰 Invoice Summary (card)
+# 💰 Invoice Summary (with Emporium 50/10 adjustment)
 # -----------------------------
+# Complaint/Staff Tab exclusion set
 complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
 complaint_amount = complaint_df['Total Amount'].sum()
 
@@ -494,29 +493,47 @@ filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['
 total_amount = filtered_df_valid['Total Amount'].sum()
 
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
-cancelled_by_invoice_type = (
-    cancelled_df.groupby('Invoice Type')['Total Amount']
-    .agg(['count', 'sum'])
-    .reset_index()
-)
+cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
 
 rider_payouts = filtered_df['80/160'].sum()
 rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
 
+# Cancel breakdowns
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
 cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
+# Base payment totals (net of cancellations)
 cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
 card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
 
+# 🔻 Emporium-only adjustment: subtract "50/10" column from COD total
+fifty_ten_total = 0.0
+if st.session_state.get("username", "").lower() == "emp":
+    # use the same filtered range (date/rider/invoice type/shift), but do NOT exclude complaint/staff tab unless required
+    # If you want to exclude them too, change filtered_df -> filtered_df_valid below
+    fifty_ten_total = pd.to_numeric(filtered_df["50/10"], errors="coerce").fillna(0).sum()
+    cod_total = cod_total - fifty_ten_total  # adjust COD net
+
+# Final net collection (unchanged logic)
 net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
 final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts
 
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
+
+# Build summary dict with conditional label/line for 50/10
 invoice_summary = {
     "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
     "Card Total Amount (Net of Card Cancellations)": f"Rs {card_total:,.0f}",
-    "COD Total Amount (Net of COD Cancellations)": f"Rs {cod_total:,.0f}",
+}
+
+if st.session_state.get("username", "").lower() == "emp":
+    invoice_summary["50/10 Adjustment (Emporium)"] = f"- Rs {fifty_ten_total:,.0f}"
+    invoice_summary["COD Total Amount (Net of COD Cancellations, Adj - 50/10)"] = f"Rs {cod_total:,.0f}"
+else:
+    invoice_summary["COD Total Amount (Net of COD Cancellations)"] = f"Rs {cod_total:,.0f}"
+
+# continue the common lines
+invoice_summary.update({
     "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
     "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
@@ -525,7 +542,8 @@ invoice_summary = {
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
     "Final Net Collection (All Adjustments)": f"Rs {final_net_collection:,.0f}",
-}
+})
+
 for label, value in invoice_summary.items():
     is_flash = "Final Net Collection (All Adjustments)" in label
     flash_class = " flash" if is_flash else ""
@@ -537,7 +555,7 @@ for label, value in invoice_summary.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 📢 Cancelled Orders by Invoice Type (card)
+# 📢 Cancelled Orders by Invoice Type
 # -----------------------------
 if not cancelled_by_invoice_type.empty:
     st.markdown("<div class='card'><h3>📢 Cancelled Orders by Invoice Types</h3>", unsafe_allow_html=True)

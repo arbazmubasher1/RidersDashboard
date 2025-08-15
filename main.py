@@ -3,12 +3,91 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 from gspread_dataframe import get_as_dataframe
-from datetime import datetime
+from datetime import datetime, timedelta
+import altair as alt
+
+# =========================
+# ---------- AUTH ----------
+# =========================
+PHASE_NAME = "Phase 6"   # shown on the login screen
+IDLE_TIMEOUT_MIN = 45    # auto-logout after X minutes of inactivity (set None to disable)
+
+# ❗ Fixed users & passwords (edit these)
+USERS = {
+    # "username": "password"
+    "p6": "123",
+    "irfaan": "p6-ops-2025",
+    "zeeshan": "p6-view",
+    # add more users here...
+}
+
+def _authed() -> bool:
+    """Return True if currently authenticated (and not idle-timed-out)."""
+    if not st.session_state.get("authed", False):
+        return False
+    if IDLE_TIMEOUT_MIN is None:
+        return True
+    last = st.session_state.get("last_activity")
+    if last is None:
+        return False
+    if datetime.utcnow() - last > timedelta(minutes=IDLE_TIMEOUT_MIN):
+        st.session_state.clear()
+        return False
+    st.session_state["last_activity"] = datetime.utcnow()
+    return True
+
+def _login_ui():
+    st.markdown(
+        f"""
+        <div style="text-align:center;margin-top:6vh">
+          <h1 style="margin-bottom:0.5em">🛡️ {PHASE_NAME} Access</h1>
+          <p style="color:#666">Enter your credentials to view the P6 Rider Delivery Dashboard.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    with st.form("login_form", clear_on_submit=False):
+        username = st.text_input("Username", value="", autocomplete="username")
+        password = st.text_input("Password", type="password", value="", autocomplete="current-password")
+        submit = st.form_submit_button("Login")
+
+    if submit:
+        # simple fixed dictionary check
+        user_ok = username.strip() in USERS
+        pass_ok = USERS.get(username.strip(), None) == password
+        if user_ok and pass_ok:
+            st.session_state["authed"] = True
+            st.session_state["username"] = username.strip()
+            st.session_state["last_activity"] = datetime.utcnow()
+            st.success("Authenticated. Loading dashboard…")
+            st.rerun()
+        else:
+            st.error("Invalid credentials. Please try again.")
+
+# Gate everything below this point
+if not _authed():
+    _login_ui()
+    st.stop()
+
+# Sidebar session header + logout
+with st.sidebar:
+    st.caption(f"Signed in as **{st.session_state.get('username','(user)')}** · {PHASE_NAME}")
+    if st.button("Logout"):
+        st.session_state.clear()
+        st.rerun()
+# =========================
+# ------- /AUTH -----------
+# =========================
+
+
+# -----------------------------
+# Google Sheets / Data Loading
+# -----------------------------
 
 # Define required scopes
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-# Load credentials from Streamlit secrets
+# Load credentials from Streamlit secrets (only for Google Sheets, not for login)
 creds_dict = st.secrets["gcp_service_account"]
 
 # Create credentials with proper scopes
@@ -21,7 +100,6 @@ gc = gspread.authorize(credentials)
 sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit")
 worksheet = sheet.worksheet("For Dashboard")
 
-
 def format_timedelta(td):
     if pd.isnull(td):
         return "00:00:00"
@@ -32,7 +110,7 @@ def format_timedelta(td):
 
 def safe_time_average(series):
     valid = series[(series.notna()) & (series.dt.total_seconds() > 0)]
-    return format_timedelta(valid.mean()) if not valid.empty else "00:00:00.00"
+    return format_timedelta(valid.mean()) if not valid.empty else "00:00:00"
 
 @st.cache_data(ttl=600)
 def load_data():
@@ -55,7 +133,8 @@ def load_data():
         "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
         "Delay Reason", "Customer Complaint", "Order Status",
         "Rider Cash Submission to DFPL", "Closing Status", "Total Promised Time",
-        "Invoice Time"  # ✅ make sure it's explicitly included
+        "Invoice Time",   # explicitly included
+        "Trade Area"      # used by chart
     ]
 
     for col in expected_columns:
@@ -76,15 +155,16 @@ def load_data():
     df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
     df['Rider Cash Submission to DFPL'] = pd.to_numeric(df['Rider Cash Submission to DFPL'], errors='coerce').fillna(0).astype(int)
 
-    # ✅ Convert Invoice Time (e.g. "12:40:00 PM") to datetime.time
+    # Convert Invoice Time (e.g. "12:40:00 PM") to datetime -> hour
     df['Invoice Time'] = pd.to_datetime(df['Invoice Time'], format="%I:%M:%S %p", errors='coerce')
     df['Hour'] = df['Invoice Time'].dt.hour
 
     return df, datetime.now()
 
 
-
-# Page setup
+# ----------------
+# Page setup / UI
+# ----------------
 st.markdown("""
     <h1 style='text-align: center; color: #c62828; font-size: 42px; font-weight: bold; margin-bottom: 1em;'>
         🛵 Rider Delivery Dashboard – P6
@@ -130,11 +210,9 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-
 # -----------------------------
 # ⏱ Cascading sidebar filters
 # -----------------------------
-
 st.sidebar.header("🔍 Search Filters")
 
 if st.sidebar.button("🔄 Reload Sheet"):
@@ -164,10 +242,8 @@ if 'selected_shifts' not in st.session_state:
 if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = sorted(base['Rider Name/Code'].dropna().unique().tolist())
 
-
 # 2) Invoice Type options (depends on date range)
 invoice_type_options = sorted(base['Invoice Type'].dropna().unique().tolist())
-# Keep only still-valid selections; if nothing left, default to all
 prev_invoice = set(st.session_state.selected_invoice_type)
 default_invoice = sorted(prev_invoice & set(invoice_type_options)) or invoice_type_options
 
@@ -180,7 +256,6 @@ selected_invoice_type = st.sidebar.multiselect(
 st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
 
 lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if st.session_state.selected_invoice_type else base
-
 
 # 3) Shift options (depend on date + invoice type)
 shift_options = sorted(lvl1['Shift Type'].dropna().unique().tolist())
@@ -196,7 +271,6 @@ selected_shifts = st.sidebar.multiselect(
 st.session_state.selected_shifts = selected_shifts or shift_options
 
 lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if st.session_state.selected_shifts else lvl1
-
 
 # 4) Rider options (depend on date + invoice type + shift)
 rider_options = sorted(lvl2['Rider Name/Code'].dropna().unique().tolist())
@@ -232,17 +306,14 @@ filtered_df = df[
     ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True)
 ]
 
-
-import altair as alt
-
-# --- Drop rows missing Trade Area or Hour ---
+# -----------------------------
+# 📈 Order Volume by Trade Area
+# -----------------------------
 filtered_df_chart = filtered_df.dropna(subset=['Trade Area', 'Hour'])
 
-# --- Select hour filter ---
 available_hours = sorted(filtered_df_chart['Hour'].dropna().unique())
 selected_hour = st.selectbox("⏱️ Filter by Hour", options=["All"] + list(available_hours))
 
-# --- Filter by selected hour ---
 if selected_hour != "All":
     df_for_chart = filtered_df_chart[filtered_df_chart['Hour'] == selected_hour]
     title_suffix = f" at {selected_hour}:00"
@@ -250,7 +321,6 @@ else:
     df_for_chart = filtered_df_chart.copy()
     title_suffix = " (All Hours Combined)"
 
-# --- Group by Trade Area and count orders ---
 trade_area_orders = (
     df_for_chart.groupby("Trade Area")
     .size()
@@ -258,7 +328,6 @@ trade_area_orders = (
     .sort_values("Order Count", ascending=False)
 )
 
-# --- Plot ---
 st.markdown(f"### 📦 Order Volume by Trade Area{title_suffix}")
 
 if not trade_area_orders.empty:
@@ -278,51 +347,9 @@ if not trade_area_orders.empty:
 else:
     st.info("No orders available for the selected hour or filters.")
 
-
-
-# # --- Consolidated Overview (Unfiltered except by Date & Shift) ---
-# st.markdown("## 📦 Consolidated Overview (By Date & Shift)", unsafe_allow_html=True)
-
-if selected_shifts:
-    consolidated_df = df[
-        (df['Date'] >= pd.to_datetime(start_date)) &
-        (df['Date'] <= pd.to_datetime(end_date)) &
-        (df['Shift Type'].isin(selected_shifts))
-    ]
-else:
-    consolidated_df = df[
-        (df['Date'] >= pd.to_datetime(start_date)) &
-        (df['Date'] <= pd.to_datetime(end_date))
-    ]
-
-# ✅ Keep only rows with a valid Invoice Number
-#consolidated_df = consolidated_df[consolidated_df['Invoice Number'].notna()]
-
-
-# consolidated_metrics = {
-#     "Total Orders": len(consolidated_df),
-#     "Completed Orders": (consolidated_df['Order Status'].str.lower() == 'completed').sum(),
-#     "Cancelled Orders": (consolidated_df['Order Status'].str.lower() == 'cancel order').sum(),
-#     "Rider Reading Payouts": f"{consolidated_df['80/160'].sum()} PKR",
-#     "Total Revenue": f"Rs {consolidated_df['Total Amount'].sum():,}",
-#     "Avg Kitchen Time": safe_time_average(consolidated_df['Total Kitchen Time']),
-#     "Avg Pickup Time": safe_time_average(consolidated_df['Total Pickup Time']),
-#     "Avg Delivery Time": safe_time_average(consolidated_df['Total Delivery Time']),
-#     "Avg Rider Return Time": safe_time_average(consolidated_df['Total Rider Return Time']),
-#     "Avg Cycle Time": safe_time_average(consolidated_df['Total Cycle Time']),
-
-# }
-
-
-# for label, value in consolidated_metrics.items():
-#     col1, col2 = st.columns([3, 1])
-#     with col1:
-#         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
-#     with col2:
-#         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
-
-# st.markdown("---")
-
+# -----------------------------
+# Selection summary band
+# -----------------------------
 if selected_riders or selected_invoice_type or selected_shifts:
     st.markdown(
         f"📅 <b>{start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}</b>&nbsp;&nbsp;&nbsp;"
@@ -332,16 +359,9 @@ if selected_riders or selected_invoice_type or selected_shifts:
         unsafe_allow_html=True
     )
 
-
-
-
-
-# Emoji mapping for Closing Status
-closing_status_emojis = {
-    "Shift Close": "✅",
-    "Pending": "⏳"
-}
-
+# -----------------------------
+# Closing Status
+# -----------------------------
 st.markdown("<div class='card'><h3>📢 Rider Closing Status</h3>", unsafe_allow_html=True)
 
 closing_status_counts = filtered_df['Closing Status'].dropna().value_counts()
@@ -354,7 +374,10 @@ for label, value in closing_status_counts.items():
         st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
 
 st.markdown("---")
-# --- Grouped Metrics (Filtered) ---
+
+# -----------------------------
+# Basic + SOS Metrics
+# -----------------------------
 basic_metrics = {
     "Total Orders": len(filtered_df),
     "In Progress": (filtered_df['Order Status'].str.lower() == 'in progress').sum(),
@@ -368,8 +391,7 @@ sos_metrics = {
     "Avg Delivery Time": format_timedelta(filtered_df['Total Delivery Time'].mean()),
     "Avg Rider Return Time": format_timedelta(filtered_df['Total Rider Return Time'].mean()),
     "Avg Cycle Time": format_timedelta(filtered_df['Total Cycle Time'].mean()),
-    "Avg Promised Time": format_timedelta(filtered_df['Total Promised Time'].mean())  # <- New Metric
-
+    "Avg Promised Time": format_timedelta(filtered_df['Total Promised Time'].mean()),
 }
 
 st.markdown("<div class='card'><h3>📊 Basic Information</h3>", unsafe_allow_html=True)
@@ -390,6 +412,9 @@ for label, value in sos_metrics.items():
         st.markdown(f"<div class='card-metric-value'>{value}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
+# -----------------------------
+# Delay Reasons
+# -----------------------------
 st.markdown("<div class='card'><h3>🛠️ Delay Reasons</h3>", unsafe_allow_html=True)
 for reason in filtered_df['Delay Reason'].dropna().unique():
     count = (filtered_df['Delay Reason'] == reason).sum()
@@ -400,7 +425,9 @@ for reason in filtered_df['Delay Reason'].dropna().unique():
         st.markdown(f"<div class='card-metric-value'>{count}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-
+# -----------------------------
+# Customer Complaints
+# -----------------------------
 st.markdown("<div class='card'><h3>📢 Customer Complaints</h3>", unsafe_allow_html=True)
 for complaint in filtered_df['Customer Complaint'].dropna().unique():
     count = (filtered_df['Customer Complaint'] == complaint).sum()
@@ -411,9 +438,9 @@ for complaint in filtered_df['Customer Complaint'].dropna().unique():
         st.markdown(f"<div class='card-metric-value'>{count}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-
-
-# 🎯 Compensation Summary
+# -----------------------------
+# Rider Compensation Summary
+# -----------------------------
 st.markdown("<div class='card'><h3>💸 Rider Reading Payouts</h3>", unsafe_allow_html=True)
 filtered_df['80/160'] = pd.to_numeric(filtered_df['80/160'], errors='coerce')
 count_80 = (filtered_df['80/160'] == 80).sum()
@@ -447,21 +474,17 @@ for inv_type, row in comp_summary.iterrows():
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
-# 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
-# 💰 Invoice Summary with Deductions, Payment Type Breakdown, and Complaint Orders
-#st.markdown("<div class='card'><h3>Invoice Summary</h3>", unsafe_allow_html=True)
-
-# --- Complaint Order Details ---
+# -----------------------------
+# Invoice Summary & Collections
+# -----------------------------
 complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
 num_complaints = len(complaint_df)
 complaint_amount = complaint_df['Total Amount'].sum()
 
-# --- Staff Tab Order Details ---
 staff_tab_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'staff tab']
 num_staff_tab = len(staff_tab_df)
 staff_tab_amount = staff_tab_df['Total Amount'].sum()
 
-# --- Valid Invoices (exclude Complaint and Staff Tab)
 filtered_df_valid = filtered_df[
     ~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])
 ]
@@ -469,34 +492,29 @@ filtered_df_valid = filtered_df[
 total_invoices = len(filtered_df_valid)
 total_amount = filtered_df_valid['Total Amount'].sum()
 
-# --- Cancelled Orders ---
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
 cancelled_amount = cancelled_df['Total Amount'].sum()
 
-# --- Cancelled by Invoice Type Breakdown ---
 cancelled_by_invoice_type = (
     cancelled_df.groupby('Invoice Type')['Total Amount']
     .agg(['count', 'sum'])
     .reset_index()
 )
 
-
-
-# --- Rider Payouts and Cash Submissions ---
 rider_payouts = filtered_df['80/160'].sum()
 rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
 
-# --- Payment Type Breakdown (valid only) ---
-cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
-card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
+# Cancelled breakdown
+cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
+cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
-# --- Zeeshan Logic ---
-zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted - cancelled_amount
+# Adjusted payment totals (Net of Cancellations)
+cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
+card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
 
-# --- Final Net Collection Calculation ---
-net_after_cancel = total_amount - cancelled_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - zeeshanvalue - rider_cash_submitted
-
+# Final Net Collection
+net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
+final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts
 
 st.markdown("""
     <style>
@@ -505,29 +523,12 @@ st.markdown("""
             50%  { opacity: 0.2; }
             100% { opacity: 1; }
         }
-
         .flash {
-    animation: flash 1.5s infinite;
-    color: #4CAF50;
-}
+            animation: flash 1.5s infinite;
+            color: #4CAF50;
+        }
     </style>
 """, unsafe_allow_html=True)
-
-# --- Cancelled Order Breakdown ---
-cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
-cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
-
-# --- Adjusted Payment Totals (Net of Cancellations) ---
-cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
-card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
-
-# --- Zeeshan logic (adjusted COD-based logic) ---
-zeeshanvalue = cod_total - rider_payouts - rider_cash_submitted
-
-# --- Final Net Collection ---
-net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
-final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts
-
 
 invoice_summary = {
     "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
@@ -540,24 +541,21 @@ invoice_summary = {
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
-    "Final Net Collection (COD - Payouts - Cash - Cancellations)": f"Rs {zeeshanvalue:,.0f}"
+    "Final Net Collection (All Adjustments)": f"Rs {final_net_collection:,.0f}",
 }
 
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
-
 for label, value in invoice_summary.items():
-    is_flash = "Final Net Collection (COD" in label  # Highlight only COD net value
+    is_flash = "Final Net Collection (All Adjustments)" in label
     flash_class = " flash" if is_flash else ""
-
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
-
 st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Cancelled Orders Breakdown by Invoice Type ---
+# Cancelled Orders Breakdown by Invoice Type
 if not cancelled_by_invoice_type.empty:
     st.markdown("<div class='card'><h3>📢 Cancelled Orders by Invoice Types</h3>", unsafe_allow_html=True)
     for _, row in cancelled_by_invoice_type.iterrows():
@@ -568,7 +566,6 @@ if not cancelled_by_invoice_type.empty:
             st.markdown(f"<span style='font-size:16px'>{label}</span>", unsafe_allow_html=True)
         with col2:
             st.markdown(f"<div style='text-align:right; font-size:16px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
-
 
 # View Raw Data
 with st.expander("📄 View Raw Data"):

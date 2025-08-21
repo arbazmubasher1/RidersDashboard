@@ -522,9 +522,9 @@ if st.session_state.get("username", "").lower() == "emp":
 # Final net
 net_after_cancel = total_amount - cancelled_cod_amount - cancelled_card_amount
 if st.session_state.get("username", "").lower() == "emp":
-    final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount-card_total-fifty_ten_total
+    final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount-card_total-fifty_ten_total-complaint_amount
 else:
-    final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount-card_total
+    final_net_collection = net_after_cancel - complaint_amount - staff_tab_amount - rider_cash_submitted - rider_payouts - pr_tab_amount-card_total-complaint_amount
 
 
 

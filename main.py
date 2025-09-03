@@ -160,7 +160,6 @@ gc = gspread.authorize(credentials)
 # Use the logged-in user's source
 SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
 WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
-
 def format_timedelta(td):
     if pd.isnull(td):
         return "00:00:00"
@@ -217,7 +216,26 @@ def load_data(sheet_url: str, worksheet_name: str):
     df['Hour'] = df['Invoice Time'].dt.hour
 
     return df, datetime.now()
+# If admin, show branch selector
+if st.session_state.get("username") == "admin":
+    st.sidebar.subheader("🛡️ Admin Branch Selector")
+    branch_options = [k for k in DATA_SOURCES.keys() if k not in ["admin", "default"]]
+    branch_labels = [DATA_SOURCES[k]["phase"] for k in branch_options]
+    selected_branch = st.sidebar.selectbox("Select Branch", branch_options, format_func=lambda x: DATA_SOURCES[x]["phase"])
+    
+    branch_profile = DATA_SOURCES[selected_branch]
+    SHEET_URL = branch_profile["sheet_url"]
+    WORKSHEET_NAME = branch_profile["worksheet"]
+    st.session_state["phase"] = branch_profile["phase"]
+    st.session_state["title"] = branch_profile["title"]
+    st.session_state["brand"] = branch_profile["brand"]
+else:
+    # Use the logged-in user's source
+    SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
+    WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
 
+# Load the data
+df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
 # ----------------
 # Page setup / UI (with red card styling)
 # ----------------

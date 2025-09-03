@@ -498,10 +498,11 @@ pr_tab_df = filtered_df[
 pr_tab_amount = pr_tab_df['Total Amount'].sum()
 
 
-filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
+#filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
 #total_amount = filtered_df_valid['Total Amount'].sum()
-total_amount=filtered_df['Total Amount'].sum()
 
+total_amount=filtered_df['Total Amount'].sum()
+filtered_df_valid=filtered_df
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
 cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
 

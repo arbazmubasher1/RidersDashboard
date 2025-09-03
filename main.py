@@ -137,38 +137,6 @@ if not _authed():
     _login_ui()
     st.stop()
 
-# -----------------------------
-# Admin branch selector (multi-branch)
-# -----------------------------
-if st.session_state.get("username") == "admin":
-    # let admin choose multiple branches (excluding admin + default)
-    branch_options = [k for k in DATA_SOURCES.keys() if k not in ["admin"]]
-    selected_branches = st.sidebar.multiselect(
-        "Select Branches",
-        options=branch_options,
-        default=branch_options,  # load all by default
-    )
-
-    all_dfs = []
-    for branch in selected_branches:
-        src = DATA_SOURCES[branch]
-        if not src["sheet_url"]:  # skip if None
-            continue
-        df_branch, _ = load_data(src["sheet_url"], src["worksheet"])
-        df_branch["Branch"] = src["phase"]   # tag branch
-        all_dfs.append(df_branch)
-
-    if all_dfs:
-        df = pd.concat(all_dfs, ignore_index=True)
-    else:
-        st.warning("Please select at least one branch to view data.")
-        st.stop()
-else:
-    # normal single-branch logic
-    SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
-    WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
-    df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
-    df["Branch"] = st.session_state.get("phase")
 
 
 # Sidebar session header + logout
@@ -250,6 +218,38 @@ def load_data(sheet_url: str, worksheet_name: str):
     df['Hour'] = df['Invoice Time'].dt.hour
 
     return df, datetime.now()
+# -----------------------------
+# Admin branch selector (multi-branch)
+# -----------------------------
+if st.session_state.get("username") == "admin":
+    # let admin choose multiple branches (excluding admin + default)
+    branch_options = [k for k in DATA_SOURCES.keys() if k not in ["admin"]]
+    selected_branches = st.sidebar.multiselect(
+        "Select Branches",
+        options=branch_options,
+        default=branch_options,  # load all by default
+    )
+
+    all_dfs = []
+    for branch in selected_branches:
+        src = DATA_SOURCES[branch]
+        if not src["sheet_url"]:  # skip if None
+            continue
+        df_branch, _ = load_data(src["sheet_url"], src["worksheet"])
+        df_branch["Branch"] = src["phase"]   # tag branch
+        all_dfs.append(df_branch)
+
+    if all_dfs:
+        df = pd.concat(all_dfs, ignore_index=True)
+    else:
+        st.warning("Please select at least one branch to view data.")
+        st.stop()
+else:
+    # normal single-branch logic
+    SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
+    WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
+    df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
+    df["Branch"] = st.session_state.get("phase")
 
 # ----------------
 # Page setup / UI (with red card styling)

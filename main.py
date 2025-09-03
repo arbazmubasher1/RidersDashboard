@@ -219,33 +219,33 @@ def load_data(sheet_url: str, worksheet_name: str):
 
     return df, datetime.now()
 # -----------------------------
-# Admin branch selector (multi-branch)
+# Data loading (admin vs normal)
 # -----------------------------
 if st.session_state.get("username") == "admin":
-    # let admin choose multiple branches (excluding admin + default)
     branch_options = [k for k in DATA_SOURCES.keys() if k not in ["admin"]]
     selected_branches = st.sidebar.multiselect(
         "Select Branches",
         options=branch_options,
-        default=branch_options,  # load all by default
+        default=branch_options,
     )
 
     all_dfs = []
     for branch in selected_branches:
         src = DATA_SOURCES[branch]
-        if not src["sheet_url"]:  # skip if None
+        if not src["sheet_url"]:
             continue
         df_branch, _ = load_data(src["sheet_url"], src["worksheet"])
-        df_branch["Branch"] = src["phase"]   # tag branch
+        df_branch["Branch"] = src["phase"]
         all_dfs.append(df_branch)
 
     if all_dfs:
         df = pd.concat(all_dfs, ignore_index=True)
+        last_updated = datetime.now()
     else:
         st.warning("Please select at least one branch to view data.")
         st.stop()
+
 else:
-    # normal single-branch logic
     SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
     WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
     df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)

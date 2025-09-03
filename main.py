@@ -216,14 +216,9 @@ def load_data(sheet_url: str, worksheet_name: str):
     df['Hour'] = df['Invoice Time'].dt.hour
 
     return df, datetime.now()
-# -----------------------------
-# Load data for the active sheet/profile (with admin Select All)
-# -----------------------------
-
 if st.session_state.get("username") == "admin":
     st.sidebar.subheader("🛡️ Admin Branch Selector")
     branch_options = [k for k in DATA_SOURCES.keys() if k not in ["admin", "default"]]
-    branch_labels = [DATA_SOURCES[k]["phase"] for k in branch_options]
 
     # "Select All" toggle
     select_all = st.sidebar.checkbox("✅ Select All Branches", value=False)
@@ -249,13 +244,13 @@ if st.session_state.get("username") == "admin":
         sheet_url = profile["sheet_url"]
         worksheet = profile["worksheet"]
         df_branch, _ = load_data(sheet_url, worksheet)
-        df_branch["Branch"] = profile["phase"]  # tag the data with branch name
+        df_branch["Branch"] = profile["phase"]  # tag the data
         dfs.append(df_branch)
 
     df = pd.concat(dfs, ignore_index=True)
     last_updated = datetime.now()
 
-    # For UI titles
+    # UI titles
     if select_all:
         st.session_state["phase"] = "All Branches"
         st.session_state["title"] = "🛡️ Riders Dashboard – Admin (All Branches)"
@@ -266,12 +261,12 @@ if st.session_state.get("username") == "admin":
     else:
         st.session_state["phase"] = f"{len(selected_branches)} Branches Selected"
         st.session_state["title"] = f"🛡️ Riders Dashboard – Admin ({len(selected_branches)} branches)"
+
 else:
-    # Use the logged-in user's source
+    # Normal user path
     SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
     WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
     df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
-
 # ----------------
 # Page setup / UI (with red card styling)
 # ----------------

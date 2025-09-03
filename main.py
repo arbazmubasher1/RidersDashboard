@@ -559,23 +559,22 @@ invoice_summary.update({
     "Final Net Collection (COD)": f"Rs {dum-pr_tab_amount-staff_tab_amount-complaint_amount-cancelled_cod_amount-rider_payouts-rider_cash_submitted:,.0f}",
 })
 
-# Render
 for label, value in invoice_summary.items():
-    flash_class = " flash" if "Final Net Collection (COD)" in label else ""
+    flash_class = ""
+    if "Final Net Collection (COD)" in label or "Final net collection (Card Verification)" in label:
+        flash_class = " flash"
+
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='card-metric{flash_class}'>{label}</div>", 
+            unsafe_allow_html=True
+        )
     with col2:
-        st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
-
-
-for label, value in invoice_summary.items():
-    flash_class = " flash" if "Final Net Collection (Card Verification)" in label else ""
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='card-metric-value{flash_class}'>{value}</div>", 
+            unsafe_allow_html=True
+        )
 
 st.markdown("</div>", unsafe_allow_html=True)
 

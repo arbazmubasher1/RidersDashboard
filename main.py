@@ -498,11 +498,10 @@ pr_tab_df = filtered_df[
 pr_tab_amount = pr_tab_df['Total Amount'].sum()
 
 
-#filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
+filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['complaint order', 'staff tab'])]
 #total_amount = filtered_df_valid['Total Amount'].sum()
 
 total_amount=filtered_df['Total Amount'].sum()
-filtered_df_valid=filtered_df
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
 cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
 
@@ -512,8 +511,10 @@ rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
 cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
-cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
-card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() - cancelled_card_amount
+cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() 
+#- cancelled_cod_amount
+card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() 
+#- cancelled_card_amount
 
 # 🔻 Emporium-only adjustment: subtract "50/10"
 fifty_ten_total = 0.0

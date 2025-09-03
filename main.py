@@ -535,14 +535,14 @@ st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html
 
 invoice_summary = {
     "Total Amount": f"Rs {total_amount:,.0f}",
-    "Card Total Amount (Net of Card Cancellations)": f"Rs {card_total:,.0f}",
+    "Card Total Amount ": f"Rs {card_total:,.0f}",
 }
 
 if st.session_state.get("username", "").lower() == "emp":
     invoice_summary["50/10 Adjustment (Emporium)"] = f"- Rs {fifty_ten_total:,.0f}"
-    invoice_summary["COD Total Amount (Net of COD Cancellations, Adj - 50/10)"] = f"Rs {cod_total:,.0f}"
+    invoice_summary["COD Total Amount (Net of Adj - 50/10)"] = f"Rs {cod_total:,.0f}"
 else:
-    invoice_summary["COD Total Amount (Net of COD Cancellations)"] = f"Rs {cod_total:,.0f}"
+    invoice_summary["COD Total Amount "] = f"Rs {cod_total:,.0f}"
 
 invoice_summary.update({
     "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",

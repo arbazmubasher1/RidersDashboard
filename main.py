@@ -16,7 +16,7 @@ USERS = {
     "p6": "123",
     "emp": "emp123",
     "zeeshan": "p6-view",
-    # add more users here...
+    "cc": "CC123",   # <-- added CC branch
 }
 
 # 📊 Data sources mapped to usernames (lowercase) or "default"
@@ -27,6 +27,14 @@ DATA_SOURCES = {
         "worksheet": "For Dashboard",
         "phase": "Emporium",
         "title": "🛵 Rider Delivery Dashboard – Emporium",
+        "brand": "Johnny & Jugnu",
+    },
+    # CC user → CC sheet
+    "cc": {
+        "sheet_url": "https://docs.google.com/spreadsheets/d/1TlEwALII0nPjj5oWlmEHOiC85S60R9T3IOcUkK-bLV0/edit#gid=1740157752",
+        "worksheet": "For Dashboard",
+        "phase": "CC",
+        "title": "🛵 Rider Delivery Dashboard – CC",
         "brand": "Johnny & Jugnu",
     },
     # Default (all other users) → Phase 6 sheet

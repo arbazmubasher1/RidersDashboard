@@ -307,7 +307,7 @@ if st.sidebar.button("🔄 Reload Sheet"):
     st.cache_data.clear()
 
 # Load data for the active sheet/profile
-df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
+#df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
 
 # Helpful test hint
 st.sidebar.caption(f"Source: {'Emporium' if st.session_state.get('phase')=='Emporium' else 'P6'}")

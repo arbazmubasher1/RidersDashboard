@@ -532,7 +532,7 @@ else:
 st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html=True)
 
 invoice_summary = {
-    "Total Amount (Excl. Complaints & Staff Tab)": f"Rs {total_amount:,.0f}",
+    "Total Amount": f"Rs {total_amount:,.0f}",
     "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",

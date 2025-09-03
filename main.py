@@ -216,26 +216,62 @@ def load_data(sheet_url: str, worksheet_name: str):
     df['Hour'] = df['Invoice Time'].dt.hour
 
     return df, datetime.now()
-# If admin, show branch selector
+# -----------------------------
+# Load data for the active sheet/profile (with admin Select All)
+# -----------------------------
+
 if st.session_state.get("username") == "admin":
     st.sidebar.subheader("🛡️ Admin Branch Selector")
     branch_options = [k for k in DATA_SOURCES.keys() if k not in ["admin", "default"]]
     branch_labels = [DATA_SOURCES[k]["phase"] for k in branch_options]
-    selected_branch = st.sidebar.selectbox("Select Branch", branch_options, format_func=lambda x: DATA_SOURCES[x]["phase"])
-    
-    branch_profile = DATA_SOURCES[selected_branch]
-    SHEET_URL = branch_profile["sheet_url"]
-    WORKSHEET_NAME = branch_profile["worksheet"]
-    st.session_state["phase"] = branch_profile["phase"]
-    st.session_state["title"] = branch_profile["title"]
-    st.session_state["brand"] = branch_profile["brand"]
+
+    # "Select All" toggle
+    select_all = st.sidebar.checkbox("✅ Select All Branches", value=False)
+
+    if select_all:
+        selected_branches = branch_options
+    else:
+        selected_branches = st.sidebar.multiselect(
+            "Select Branch(es)",
+            options=branch_options,
+            default=[],
+            format_func=lambda x: DATA_SOURCES[x]["phase"]
+        )
+
+    if not selected_branches:
+        st.warning("Please select at least one branch to view data.")
+        st.stop()
+
+    # Load and combine data
+    dfs = []
+    for branch in selected_branches:
+        profile = DATA_SOURCES[branch]
+        sheet_url = profile["sheet_url"]
+        worksheet = profile["worksheet"]
+        df_branch, _ = load_data(sheet_url, worksheet)
+        df_branch["Branch"] = profile["phase"]  # tag the data with branch name
+        dfs.append(df_branch)
+
+    df = pd.concat(dfs, ignore_index=True)
+    last_updated = datetime.now()
+
+    # For UI titles
+    if select_all:
+        st.session_state["phase"] = "All Branches"
+        st.session_state["title"] = "🛡️ Riders Dashboard – Admin (All Branches)"
+    elif len(selected_branches) == 1:
+        branch_profile = DATA_SOURCES[selected_branches[0]]
+        st.session_state["phase"] = branch_profile["phase"]
+        st.session_state["title"] = branch_profile["title"]
+    else:
+        st.session_state["phase"] = f"{len(selected_branches)} Branches Selected"
+        st.session_state["title"] = f"🛡️ Riders Dashboard – Admin ({len(selected_branches)} branches)"
 else:
     # Use the logged-in user's source
     SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
     WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
+    df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
 
-# Load the data
-df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
 # ----------------
 # Page setup / UI (with red card styling)
 # ----------------

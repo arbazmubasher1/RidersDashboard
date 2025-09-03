@@ -16,29 +16,51 @@ USERS = {
     "p6": "123",
     "emp": "emp123",
     "zeeshan": "p6-view",
-    "cc": "CC123",   # <-- added CC branch
+    "cc": "CC123",     # CC branch
+    "ck": "CK123",     # CK branch
+    "jt": "JT123",     # JT branch
+    "bt": "BT123",     # BT branch
 }
+
 
 # 📊 Data sources mapped to usernames (lowercase) or "default"
 DATA_SOURCES = {
-    # Emporium user → Emporium sheet
-    "emp": {
+    "emp": {  # Emporium branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1I2sIaAJxrNQIRHAmRTXthqtG1DH6Zep7Hnsa42UZmkk/edit#gid=1740157752",
         "worksheet": "For Dashboard",
         "phase": "Emporium",
         "title": "🛵 Rider Delivery Dashboard – Emporium",
         "brand": "Johnny & Jugnu",
     },
-    # CC user → CC sheet
-    "cc": {
+    "cc": {  # CC branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1TlEwALII0nPjj5oWlmEHOiC85S60R9T3IOcUkK-bLV0/edit#gid=1740157752",
         "worksheet": "For Dashboard",
         "phase": "CC",
         "title": "🛵 Rider Delivery Dashboard – CC",
         "brand": "Johnny & Jugnu",
     },
-    # Default (all other users) → Phase 6 sheet
-    "default": {
+    "ck": {  # CK branch
+        "sheet_url": "https://docs.google.com/spreadsheets/d/19PfaI5sxWiSncOrsTeJtL9sjnwfoR_6XUu7Q0Z5X748/edit?gid=1037783061",
+        "worksheet": "For Dashboard",
+        "phase": "CK",
+        "title": "🛵 Rider Delivery Dashboard – CK",
+        "brand": "Johnny & Jugnu",
+    },
+    "jt": {  # JT branch
+        "sheet_url": "https://docs.google.com/spreadsheets/d/1qLqGFoPu10xbBEnJe_QJj7dyYrX16a25e8kFDNf-NDQ/edit?gid=1037783061",
+        "worksheet": "For Dashboard",
+        "phase": "JT",
+        "title": "🛵 Rider Delivery Dashboard – JT",
+        "brand": "Johnny & Jugnu",
+    },
+    "bt": {  # BT branch
+        "sheet_url": "https://docs.google.com/spreadsheets/d/1F4XQw804ET_SMC_ihsjDo6zFGcid0hqVU3-ODU5VWKQ/edit?gid=1037783061",
+        "worksheet": "For Dashboard",
+        "phase": "BT",
+        "title": "🛵 Rider Delivery Dashboard – BT",
+        "brand": "Johnny & Jugnu",
+    },
+    "default": {  # Default (Phase 6) branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit",
         "worksheet": "For Dashboard",
         "phase": "Phase 6",

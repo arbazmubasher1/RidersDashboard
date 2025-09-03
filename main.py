@@ -537,6 +537,9 @@ invoice_summary = {
     "Total Amount": f"Rs {total_amount:,.0f}",
     "Card Total Amount ": f"Rs {card_total:,.0f}",
     "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
+    "Final Net Collection (Card Verification)": f"Rs {card_total-cancelled_card_amount:,.0f}",
+
+    
 }
 
 if st.session_state.get("username", "").lower() == "emp":
@@ -553,7 +556,6 @@ invoice_summary.update({
     
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
-    "Final Net Collection (Card Verification)": f"Rs {card_total:,.0f}",
     "Final Net Collection (All Adjustments)": f"Rs {final_net_collection:,.0f}",
 })
 

@@ -561,7 +561,7 @@ invoice_summary.update({
 
 for label, value in invoice_summary.items():
     flash_class = ""
-    if "Final Net Collection (COD)" in label or "Final net collection (Card Verification)" in label:
+    if "Final Net Collection (COD)" in label or "Final Net Collection (Card Verification)" in label:
         flash_class = " flash"
 
     col1, col2 = st.columns([3, 1])

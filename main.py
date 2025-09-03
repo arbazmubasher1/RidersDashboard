@@ -511,7 +511,8 @@ rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
 cancelled_card_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum()
 
-cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() - cancelled_cod_amount
+cod_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum() 
+#- cancelled_cod_amount
 card_total = filtered_df_valid[filtered_df_valid['Invoice Type'].str.lower().str.contains('card')]['Total Amount'].sum() 
 #- cancelled_card_amount
 

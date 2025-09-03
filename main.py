@@ -20,54 +20,55 @@ USERS = {
     "ck": "CK123",
     "jt": "JT123",
     "bt": "BT123",
-    "admin": "admin123",   # 🔑 Admin login
+    "admin": "6969",   # 🔑 Admin login
 }
+
 
 # 📊 Data sources mapped to usernames (lowercase) or "default"
 DATA_SOURCES = {
-    "emp": {
+    "emp": {  # Emporium branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1I2sIaAJxrNQIRHAmRTXthqtG1DH6Zep7Hnsa42UZmkk/edit#gid=1740157752",
         "worksheet": "For Dashboard",
         "phase": "Emporium",
         "title": "🛵 Rider Delivery Dashboard – Emporium",
         "brand": "Johnny & Jugnu",
     },
-    "cc": {
+    "admin": {
+        "sheet_url": None,   # placeholder, admin loads ALL branches
+        "worksheet": None,
+        "phase": "Admin",
+        "title": "🛡️ Riders Dashboard – Admin View",
+        "brand": "Johnny & Jugnu",
+    },
+    "cc": {  # CC branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1TlEwALII0nPjj5oWlmEHOiC85S60R9T3IOcUkK-bLV0/edit#gid=1740157752",
         "worksheet": "For Dashboard",
         "phase": "CC",
         "title": "🛵 Rider Delivery Dashboard – CC",
         "brand": "Johnny & Jugnu",
     },
-    "ck": {
+    "ck": {  # CK branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/19PfaI5sxWiSncOrsTeJtL9sjnwfoR_6XUu7Q0Z5X748/edit?gid=1037783061",
         "worksheet": "For Dashboard",
         "phase": "CK",
         "title": "🛵 Rider Delivery Dashboard – CK",
         "brand": "Johnny & Jugnu",
     },
-    "jt": {
+    "jt": {  # JT branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1qLqGFoPu10xbBEnJe_QJj7dyYrX16a25e8kFDNf-NDQ/edit?gid=1037783061",
         "worksheet": "For Dashboard",
         "phase": "JT",
         "title": "🛵 Rider Delivery Dashboard – JT",
         "brand": "Johnny & Jugnu",
     },
-    "bt": {
+    "bt": {  # BT branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1F4XQw804ET_SMC_ihsjDo6zFGcid0hqVU3-ODU5VWKQ/edit?gid=1037783061",
         "worksheet": "For Dashboard",
         "phase": "BT",
         "title": "🛵 Rider Delivery Dashboard – BT",
         "brand": "Johnny & Jugnu",
     },
-    "admin": {
-        "sheet_url": None,
-        "worksheet": None,
-        "phase": "Admin",
-        "title": "🛡️ Riders Dashboard – Admin View",
-        "brand": "Johnny & Jugnu",
-    },
-    "default": {
+    "default": {  # Default (Phase 6) branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit",
         "worksheet": "For Dashboard",
         "phase": "Phase 6",
@@ -100,7 +101,7 @@ def _login_ui():
         f"""
         <div style="text-align:center;margin-top:6vh">
           <h1 style="margin-bottom:0.5em">🛡️ Riders Dashboard Access</h1>
-          <p style="color:#666">Enter your credentials to view: <b>{default_title}</b>, Emporium, CC, CK, JT, BT, or Admin dashboard.</p>
+          <p style="color:#666">Enter your credentials to view: <b>{default_title}</b> or the Emporium dashboard.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -125,7 +126,7 @@ def _login_ui():
             st.session_state["phase"] = prof["phase"]
             st.session_state["title"] = prof["title"]
             st.session_state["brand"] = prof["brand"]
-            st.cache_data.clear()
+            st.cache_data.clear()   # clear cached data from any prior user/sheet
             st.success("Authenticated. Loading dashboard…")
             st.rerun()
         else:
@@ -143,10 +144,10 @@ with st.sidebar:
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
-
 # =========================
 # ------- /AUTH -----------
 # =========================
+
 
 # -----------------------------
 # Google Sheets / Data Loading
@@ -156,48 +157,66 @@ creds_dict = st.secrets["gcp_service_account"]
 credentials = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 gc = gspread.authorize(credentials)
 
-def clean_dataframe(df, branch_name):
+# Use the logged-in user's source
+SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
+WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
+
+def format_timedelta(td):
+    if pd.isnull(td):
+        return "00:00:00"
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+
+def safe_time_average(series):
+    valid = series[(series.notna()) & (series.dt.total_seconds() > 0)]
+    return format_timedelta(valid.mean()) if not valid.empty else "00:00:00"
+
+# cache by strings (sheet_url, worksheet_name) so each user/source has its own cache
+@st.cache_data(ttl=600)
+def load_data(sheet_url: str, worksheet_name: str):
+    sheet = gc.open_by_url(sheet_url)
+    ws = sheet.worksheet(worksheet_name)
+    df = get_as_dataframe(
+        ws,
+        evaluate_formulas=True,
+        include_tailing_empty=False,
+        default_blank=""
+    )
     df.dropna(how="all", inplace=True)
     df.dropna(axis=1, how="all", inplace=True)
     df = df[~df.applymap(lambda x: isinstance(x, str) and '#REF!' in x)].copy()
     df.columns = df.columns.str.strip()
-    df["Branch"] = branch_name
-    return df
 
-@st.cache_data(ttl=600)
-def load_data(sheet_url: str, worksheet_name: str, branch_name: str):
-    sheet = gc.open_by_url(sheet_url)
-    ws = sheet.worksheet(worksheet_name)
-    df = get_as_dataframe(ws, evaluate_formulas=True, include_tailing_empty=False, default_blank="")
-    df = clean_dataframe(df, branch_name)
-    return df
+    expected_columns = [
+        "Date", "Rider Name/Code", "Invoice Type", "Shift Type", "Invoice Number",
+        "Total Amount", "80/160", "Total Kitchen Time", "Total Pickup Time",
+        "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
+        "Delay Reason", "Customer Complaint", "Order Status",
+        "Rider Cash Submission to DFPL", "Closing Status", "Total Promised Time",
+        "Invoice Time", "Trade Area", "50/10"   # <- include 50/10 for Emporium adjustment
+    ]
+    for col in expected_columns:
+        if col not in df.columns:
+            df[col] = None
 
-def load_all_data():
-    dfs = []
-    for u, prof in DATA_SOURCES.items():
-        if u in ("default", "admin"):
-            continue
-        df = load_data(prof["sheet_url"], prof["worksheet"], prof["phase"])
-        dfs.append(df)
-    return pd.concat(dfs, ignore_index=True)
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    for col in ['Total Kitchen Time','Total Pickup Time','Total Delivery Time',
+                'Total Rider Return Time','Total Cycle Time','Total Promised Time']:
+        df[col] = pd.to_timedelta(df[col].astype(str), errors='coerce')
 
-# Use the logged-in user's source
-if st.session_state.get("username") == "admin":
-    df = load_all_data()
-    last_updated = datetime.now()
-else:
-    SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
-    WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
-    df = load_data(SHEET_URL, WORKSHEET_NAME, st.session_state.get("phase"))
-    last_updated = datetime.now()
+    df['80/160'] = pd.to_numeric(df['80/160'], errors='coerce').fillna(0).astype(int)
+    df['Total Amount'] = pd.to_numeric(df['Total Amount'], errors='coerce').fillna(0).astype(int)
+    df['Rider Cash Submission to DFPL'] = pd.to_numeric(df['Rider Cash Submission to DFPL'], errors='coerce').fillna(0).astype(int)
 
-# -----------------------------
-# Admin-only branch filter
-# -----------------------------
-if st.session_state.get("username") == "admin":
-    branch_options = sorted(df["Branch"].dropna().unique().tolist())
-    selected_branches = st.sidebar.multiselect("Select Branch(es)", options=branch_options, default=branch_options)
-    df = df[df["Branch"].isin(selected_branches)]
+    # "50/10" may be per-order numeric; make numeric
+    df['50/10'] = pd.to_numeric(df['50/10'], errors='coerce').fillna(0)
+
+    df['Invoice Time'] = pd.to_datetime(df['Invoice Time'], format="%I:%M:%S %p", errors='coerce')
+    df['Hour'] = df['Invoice Time'].dt.hour
+
+    return df, datetime.now()
 
 # ----------------
 # Page setup / UI (with red card styling)

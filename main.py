@@ -568,6 +568,15 @@ for label, value in invoice_summary.items():
     with col2:
         st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
 
+
+for label, value in invoice_summary.items():
+    flash_class = " flash" if "Final Net Collection (Card Verification)" in label else ""
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div class='card-metric-value{flash_class}'>{value}</div>", unsafe_allow_html=True)
+
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------

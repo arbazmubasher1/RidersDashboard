@@ -561,7 +561,7 @@ invoice_summary.update({
 
 # Render
 for label, value in invoice_summary.items():
-    flash_class = " flash" if "Final Net Collection (All Adjustments)" in label else ""
+    flash_class = " flash" if "Final Net Collection (COD)" in label else ""
     col1, col2 = st.columns([3, 1])
     with col1:
         st.markdown(f"<div class='card-metric{flash_class}'>{label}</div>", unsafe_allow_html=True)

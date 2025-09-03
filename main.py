@@ -543,7 +543,7 @@ invoice_summary = {
 }
 
 if st.session_state.get("username", "").lower() == "emp":
-    invoice_summary["50/10 Adjustment (Emporium)"] = f"- Rs {fifty_ten_total:,.0f}"
+    #invoice_summary["50/10 Adjustment (Emporium)"] = f"- Rs {fifty_ten_total:,.0f}"
     invoice_summary["COD Total Amount (Net of Adj - 50/10)"] = f"Rs {dum:,.0f}"
 else:
     invoice_summary["COD Total Amount "] = f"Rs {dum:,.0f}"
@@ -553,7 +553,7 @@ invoice_summary.update({
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
     "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
-    
+    "50/10 Adjustment (Emporium)" = f"- Rs {fifty_ten_total:,.0f}
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
     "Final Net Collection (All Adjustments)": f"Rs {dum-pr_tab_amount-staff_tab_amount-complaint_amount-cancelled_cod_amount-rider_payouts-rider_cash_submitted:,.0f}",

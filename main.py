@@ -544,7 +544,7 @@ invoice_summary = {
 
 if st.session_state.get("username", "").lower() == "emp":
     invoice_summary["50/10 Adjustment (Emporium)"] = f"- Rs {fifty_ten_total:,.0f}"
-    invoice_summary["COD Total Amount (Net of Adj - 50/10)"] = f"Rs {cod_total:,.0f}"
+    invoice_summary["COD Total Amount (Net of Adj - 50/10)"] = f"Rs {cod_total+pr_tab_amount+staff_tab_amount+complaint_amount+cancelled_cod_amount+rider_payouts:,.0f}"
 else:
     invoice_summary["COD Total Amount "] = f"Rs {cod_total+pr_tab_amount+staff_tab_amount+complaint_amount+cancelled_cod_amount+rider_payouts:,.0f}"
 

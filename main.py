@@ -24,28 +24,6 @@ USERS = {
 }
 
 
-def safe_multiselect(label, options, key, session_key):
-    """A safe multiselect wrapper that ensures defaults are valid."""
-    # Pull last selected values from session_state
-    prev = st.session_state.get(session_key, [])
-    # Keep only values that are still in options
-    valid_defaults = [v for v in prev if v in options]
-
-    # If nothing valid, fall back to all options
-    if not valid_defaults:
-        valid_defaults = options
-
-    # Render the multiselect
-    selected = st.sidebar.multiselect(
-        label,
-        options=options,
-        default=valid_defaults,
-        key=key
-    )
-    # Update session state
-    st.session_state[session_key] = selected or options
-    return st.session_state[session_key]
-
 # 📊 Data sources mapped to usernames (lowercase) or "default"
 DATA_SOURCES = {
     "emp": {  # Emporium branch
@@ -336,9 +314,6 @@ st.sidebar.caption(f"Source: {'Emporium' if st.session_state.get('phase')=='Empo
 st.sidebar.caption(f"Worksheet: {WORKSHEET_NAME}")
 
 # -----------------------------
-# Cascading sidebar filters
-# -----------------------------
-# -----------------------------
 # Cascading sidebar filters (safe version)
 # -----------------------------
 
@@ -362,35 +337,19 @@ base = df[
 ].copy()
 
 # --- Invoice Type ---
-invoice_type_options = safe_unique_options(df, "Invoice Type")
-selected_invoice_type = safe_multiselect(
-    "Select Invoice Type(s)", 
-    invoice_type_options, 
-    key="invoice_multiselect", 
-    session_key="selected_invoice_type"
+invoice_type_options = safe_unique_options(base, "Invoice Type")
+if 'selected_invoice_type' not in st.session_state:
+    st.session_state.selected_invoice_type = invoice_type_options
+
+selected_invoice_type = st.sidebar.multiselect(
+    "Select Invoice Type(s)",
+    options=invoice_type_options,
+    default=st.session_state.selected_invoice_type if st.session_state.selected_invoice_type else invoice_type_options,
+    key="invoice_multiselect"
 )
+st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
 
-lvl1 = base[base['Invoice Type'].isin(selected_invoice_type)] if invoice_type_options else base
-
-# --- Shift Type ---
-shift_options = safe_unique_options(df, "Shift Type")
-selected_shifts = safe_multiselect(
-    "Select Shift(s)", 
-    shift_options, 
-    key="shift_multiselect", 
-    session_key="selected_shifts"
-)
-
-lvl2 = lvl1[lvl1['Shift Type'].isin(selected_shifts)] if shift_options else lvl1
-
-# --- Rider Name/Code ---
-rider_options = safe_unique_options(df, "Rider Name/Code")
-selected_riders = safe_multiselect(
-    "Select Rider(s)", 
-    rider_options, 
-    key="rider_multiselect", 
-    session_key="selected_riders"
-)
+lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if invoice_type_options else base
 
 # --- Shift Type ---
 shift_options = safe_unique_options(lvl1, "Shift Type")
@@ -607,40 +566,6 @@ for inv_type, row in comp_summary.iterrows():
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
-
-
-# -----------------------------
-# 🧍 Rider-wise Payouts (Admin view only)
-# -----------------------------
-if st.session_state.get("username") == "admin":
-    st.markdown("<div class='card'><h3>🧍 Rider-wise Reading Payouts</h3>", unsafe_allow_html=True)
-
-    rider_payouts_df = (
-        filtered_df.groupby("Rider Name/Code", dropna=True)
-        .agg(
-            Orders=("Invoice Number", "count"),
-            Total_Payout=("80/160", "sum")
-        )
-        .reset_index()
-        .sort_values("Total_Payout", ascending=False)
-    )
-
-    # ➕ Add Estimated KMs (Total Payout / 7)
-    rider_payouts_df["Estimated KMs"] = (rider_payouts_df["Total_Payout"] / 7).round(2)
-
-    if not rider_payouts_df.empty:
-        st.dataframe(
-            rider_payouts_df.style.format({
-                "Total_Payout": "{:,.0f} PKR",
-                "Estimated KMs": "{:,.2f} km"
-            }),
-            use_container_width=True
-        )
-    else:
-        st.info("No rider payouts available for the selected filters.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
 
 # -----------------------------
 # 💰 Invoice Summary (with Emporium 50/10 adjustment)

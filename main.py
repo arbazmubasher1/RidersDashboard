@@ -325,7 +325,8 @@ def safe_unique_options(df, colname):
     if colname in df.columns:
         vals = df[colname].dropna().unique().tolist()
         if vals:
-            return sorted(vals)
+            # Convert everything to string so sorting never breaks
+            return sorted([str(v) for v in vals])
     return []
 
 # --- Date Range ---

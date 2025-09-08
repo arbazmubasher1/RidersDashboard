@@ -587,9 +587,15 @@ if st.session_state.get("username") == "admin":
         .sort_values("Total_Payout", ascending=False)
     )
 
+    # ➕ Add Estimated KMs (Total Payout / 7)
+    rider_payouts_df["Estimated KMs"] = (rider_payouts_df["Total_Payout"] / 7).round(2)
+
     if not rider_payouts_df.empty:
         st.dataframe(
-            rider_payouts_df.style.format({"Total_Payout": "{:,.0f} PKR"}),
+            rider_payouts_df.style.format({
+                "Total_Payout": "{:,.0f} PKR",
+                "Estimated KMs": "{:,.2f} km"
+            }),
             use_container_width=True
         )
     else:

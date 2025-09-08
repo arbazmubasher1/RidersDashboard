@@ -317,7 +317,7 @@ st.sidebar.caption(f"Worksheet: {WORKSHEET_NAME}")
 # Cascading sidebar filters
 # -----------------------------
 # -----------------------------
-# Cascading sidebar filters (safe version)
+# Cascading sidebar filters (safe version, fixed for Admin)
 # -----------------------------
 
 def safe_unique_options(df, colname):
@@ -325,14 +325,20 @@ def safe_unique_options(df, colname):
     if colname in df.columns:
         vals = df[colname].dropna().unique().tolist()
         if vals:
-            # Convert everything to string so sorting never breaks
             return sorted([str(v) for v in vals])
     return []
 
 # --- Date Range ---
 min_date = pd.to_datetime(df['Date'].min())
 max_date = pd.to_datetime(df['Date'].max())
-start_date, end_date = st.sidebar.date_input("Select Date Range", [min_date, max_date])
+
+# default: last 7 days for admin, full range for others
+if st.session_state.get("username") == "admin":
+    default_start = max_date - pd.Timedelta(days=7)
+else:
+    default_start = min_date
+
+start_date, end_date = st.sidebar.date_input("Select Date Range", [default_start, max_date])
 
 base = df[
     (df['Date'] >= pd.to_datetime(start_date)) &
@@ -340,7 +346,7 @@ base = df[
 ].copy()
 
 # --- Invoice Type ---
-invoice_type_options = safe_unique_options(base, "Invoice Type")
+invoice_type_options = safe_unique_options(df, "Invoice Type")   # note: use df (all data), not base
 if 'selected_invoice_type' not in st.session_state:
     st.session_state.selected_invoice_type = invoice_type_options
 
@@ -355,7 +361,7 @@ st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_o
 lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if invoice_type_options else base
 
 # --- Shift Type ---
-shift_options = safe_unique_options(lvl1, "Shift Type")
+shift_options = safe_unique_options(df, "Shift Type")   # also use df (all data)
 if 'selected_shifts' not in st.session_state:
     st.session_state.selected_shifts = shift_options
 
@@ -370,7 +376,7 @@ st.session_state.selected_shifts = selected_shifts or shift_options
 lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if shift_options else lvl1
 
 # --- Rider Name/Code ---
-rider_options = safe_unique_options(lvl2, "Rider Name/Code")
+rider_options = safe_unique_options(df, "Rider Name/Code")   # again use df (all riders)
 if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = rider_options
 

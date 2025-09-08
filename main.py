@@ -314,62 +314,52 @@ st.sidebar.caption(f"Source: {'Emporium' if st.session_state.get('phase')=='Empo
 st.sidebar.caption(f"Worksheet: {WORKSHEET_NAME}")
 
 # -----------------------------
-# Cascading sidebar filters (safe version)
+# Cascading sidebar filters
 # -----------------------------
-
-def safe_unique_options(df, colname):
-    """Return sorted unique non-null values for a column, or [] if missing/empty."""
-    if colname in df.columns:
-        vals = df[colname].dropna().unique().tolist()
-        if vals:
-            # Convert everything to string so sorting never breaks
-            return sorted([str(v) for v in vals])
-    return []
-
-# --- Date Range ---
 min_date = pd.to_datetime(df['Date'].min())
 max_date = pd.to_datetime(df['Date'].max())
 start_date, end_date = st.sidebar.date_input("Select Date Range", [min_date, max_date])
 
-base = df[
-    (df['Date'] >= pd.to_datetime(start_date)) &
-    (df['Date'] <= pd.to_datetime(end_date))
-].copy()
+base = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))].copy()
 
-# --- Invoice Type ---
-invoice_type_options = safe_unique_options(base, "Invoice Type")
 if 'selected_invoice_type' not in st.session_state:
-    st.session_state.selected_invoice_type = invoice_type_options
+    st.session_state.selected_invoice_type = sorted(base['Invoice Type'].dropna().unique().tolist())
+if 'selected_shifts' not in st.session_state:
+    st.session_state.selected_shifts = sorted(base['Shift Type'].dropna().unique().tolist())
+if 'selected_riders' not in st.session_state:
+    st.session_state.selected_riders = sorted(base['Rider Name/Code'].dropna().unique().tolist())
+
+invoice_type_options = sorted(base['Invoice Type'].dropna().unique().tolist())
+prev_invoice = set(st.session_state.selected_invoice_type)
+default_invoice = sorted(prev_invoice & set(invoice_type_options)) or invoice_type_options
 
 selected_invoice_type = st.sidebar.multiselect(
     "Select Invoice Type(s)",
     options=invoice_type_options,
-    default=st.session_state.selected_invoice_type if st.session_state.selected_invoice_type else invoice_type_options,
+    default=default_invoice,
     key="invoice_multiselect"
 )
 st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
 
-lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if invoice_type_options else base
+lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if st.session_state.selected_invoice_type else base
 
-# --- Shift Type ---
-shift_options = safe_unique_options(lvl1, "Shift Type")
-if 'selected_shifts' not in st.session_state:
-    st.session_state.selected_shifts = shift_options
+shift_options = sorted(lvl1['Shift Type'].dropna().unique().tolist())
+prev_shifts = set(st.session_state.selected_shifts)
+default_shifts = sorted(prev_shifts & set(shift_options)) or shift_options
 
 selected_shifts = st.sidebar.multiselect(
     "Select Shift(s)",
     options=shift_options,
-    default=st.session_state.selected_shifts if st.session_state.selected_shifts else shift_options,
+    default=default_shifts,
     key="shift_multiselect"
 )
 st.session_state.selected_shifts = selected_shifts or shift_options
 
-lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if shift_options else lvl1
+lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if st.session_state.selected_shifts else lvl1
 
-# --- Rider Name/Code ---
-rider_options = safe_unique_options(lvl2, "Rider Name/Code")
-if 'selected_riders' not in st.session_state:
-    st.session_state.selected_riders = rider_options
+rider_options = sorted(lvl2['Rider Name/Code'].dropna().unique().tolist())
+prev_riders = set(st.session_state.selected_riders)
+default_riders = sorted(prev_riders & set(rider_options)) or rider_options
 
 c1, c2 = st.sidebar.columns(2)
 with c1:
@@ -382,25 +372,18 @@ with c2:
 selected_riders = st.sidebar.multiselect(
     "Select Rider(s)",
     options=rider_options,
-    default=st.session_state.selected_riders if set(st.session_state.selected_riders) <= set(rider_options) else rider_options,
+    default=st.session_state.selected_riders if set(st.session_state.selected_riders) <= set(rider_options) else default_riders,
     key="rider_multiselect"
 )
 st.session_state.selected_riders = selected_riders
 
-# --- Final filtered dataframe ---
 filtered_df = df[
     (df['Date'] >= pd.to_datetime(start_date)) &
     (df['Date'] <= pd.to_datetime(end_date)) &
-    (df['Invoice Type'].isin(st.session_state.selected_invoice_type) if invoice_type_options else True) &
-    (df['Shift Type'].isin(st.session_state.selected_shifts) if shift_options else True) &
-    (df['Rider Name/Code'].isin(st.session_state.selected_riders) if rider_options else True)
+    (df['Invoice Type'].isin(selected_invoice_type)) &
+    ((df['Rider Name/Code'].isin(selected_riders)) if selected_riders else True) &
+    ((df['Shift Type'].isin(selected_shifts)) if selected_shifts else True)
 ]
-
-# --- Handle empty data ---
-if filtered_df.empty:
-    st.warning("⚠️ No data available for the selected date range and filters.")
-    st.stop()
-
 
 # -----------------------------
 # 📌 Selection summary band
@@ -565,39 +548,6 @@ for inv_type, row in comp_summary.iterrows():
         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
-
-
-
-# -----------------------------
-# 🧍 Rider-wise Payouts (Admin view only)
-# -----------------------------
-st.markdown("<div class='card'><h3>🧍 Rider-wise Reading Payouts</h3>", unsafe_allow_html=True)
-
-rider_payouts_df = (
-    filtered_df.groupby("Rider Name/Code", dropna=True)
-    .agg(
-        Orders=("Invoice Number", "count"),
-        Total_Payout=("80/160", "sum")
-    )
-    .reset_index()
-    .sort_values("Total_Payout", ascending=False)
-)
-
-# ➕ Add Estimated KMs (Total Payout / 7)
-rider_payouts_df["Estimated KMs"] = (rider_payouts_df["Total_Payout"] / 7).round(2)
-
-if not rider_payouts_df.empty:
-    st.dataframe(
-        rider_payouts_df.style.format({
-            "Total_Payout": "{:,.0f} PKR",
-            "Estimated KMs": "{:,.2f} km"
-        }),
-        use_container_width=True
-    )
-else:
-    st.info("No rider payouts available for the selected filters.")
-
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------

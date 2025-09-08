@@ -314,8 +314,21 @@ st.sidebar.caption(f"Source: {'Emporium' if st.session_state.get('phase')=='Empo
 st.sidebar.caption(f"Worksheet: {WORKSHEET_NAME}")
 
 # -----------------------------
-# Cascading sidebar filters (safe)
+# Cascading sidebar filters
 # -----------------------------
+# -----------------------------
+# Cascading sidebar filters (safe version)
+# -----------------------------
+
+def safe_unique_options(df, colname):
+    """Return sorted unique non-null values for a column, or [] if missing/empty."""
+    if colname in df.columns:
+        vals = df[colname].dropna().unique().tolist()
+        if vals:
+            return sorted(vals)
+    return []
+
+# --- Date Range ---
 min_date = pd.to_datetime(df['Date'].min())
 max_date = pd.to_datetime(df['Date'].max())
 start_date, end_date = st.sidebar.date_input("Select Date Range", [min_date, max_date])
@@ -326,12 +339,7 @@ base = df[
 ].copy()
 
 # --- Invoice Type ---
-invoice_type_options = (
-    sorted(base['Invoice Type'].dropna().unique().tolist())
-    if 'Invoice Type' in base.columns and not base['Invoice Type'].dropna().empty
-    else []
-)
-
+invoice_type_options = safe_unique_options(base, "Invoice Type")
 if 'selected_invoice_type' not in st.session_state:
     st.session_state.selected_invoice_type = invoice_type_options
 
@@ -343,15 +351,10 @@ selected_invoice_type = st.sidebar.multiselect(
 )
 st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
 
-lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if st.session_state.selected_invoice_type else base
+lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if invoice_type_options else base
 
 # --- Shift Type ---
-shift_options = (
-    sorted(lvl1['Shift Type'].dropna().unique().tolist())
-    if 'Shift Type' in lvl1.columns and not lvl1['Shift Type'].dropna().empty
-    else []
-)
-
+shift_options = safe_unique_options(lvl1, "Shift Type")
 if 'selected_shifts' not in st.session_state:
     st.session_state.selected_shifts = shift_options
 
@@ -363,15 +366,10 @@ selected_shifts = st.sidebar.multiselect(
 )
 st.session_state.selected_shifts = selected_shifts or shift_options
 
-lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if st.session_state.selected_shifts else lvl1
+lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if shift_options else lvl1
 
 # --- Rider Name/Code ---
-rider_options = (
-    sorted(lvl2['Rider Name/Code'].dropna().unique().tolist())
-    if 'Rider Name/Code' in lvl2.columns and not lvl2['Rider Name/Code'].dropna().empty
-    else []
-)
-
+rider_options = safe_unique_options(lvl2, "Rider Name/Code")
 if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = rider_options
 
@@ -399,6 +397,12 @@ filtered_df = df[
     (df['Shift Type'].isin(st.session_state.selected_shifts) if shift_options else True) &
     (df['Rider Name/Code'].isin(st.session_state.selected_riders) if rider_options else True)
 ]
+
+# --- Handle empty data ---
+if filtered_df.empty:
+    st.warning("⚠️ No data available for the selected date range and filters.")
+    st.stop()
+
 
 # -----------------------------
 # 📌 Selection summary band

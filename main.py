@@ -346,19 +346,23 @@ base = df[
 ].copy()
 
 # --- Invoice Type ---
-invoice_type_options = safe_unique_options(df, "Invoice Type")   # note: use df (all data), not base
+# --- Invoice Type ---
+invoice_type_options = safe_unique_options(df, "Invoice Type")
 if 'selected_invoice_type' not in st.session_state:
     st.session_state.selected_invoice_type = invoice_type_options
+
+# Ensure defaults exist in current options
+valid_defaults = [v for v in st.session_state.selected_invoice_type if v in invoice_type_options]
+if not valid_defaults:
+    valid_defaults = invoice_type_options  # fallback to all
 
 selected_invoice_type = st.sidebar.multiselect(
     "Select Invoice Type(s)",
     options=invoice_type_options,
-    default=st.session_state.selected_invoice_type if st.session_state.selected_invoice_type else invoice_type_options,
+    default=valid_defaults,
     key="invoice_multiselect"
 )
 st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
-
-lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if invoice_type_options else base
 
 # --- Shift Type ---
 shift_options = safe_unique_options(df, "Shift Type")   # also use df (all data)

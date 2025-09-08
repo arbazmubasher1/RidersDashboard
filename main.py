@@ -24,6 +24,28 @@ USERS = {
 }
 
 
+def safe_multiselect(label, options, key, session_key):
+    """A safe multiselect wrapper that ensures defaults are valid."""
+    # Pull last selected values from session_state
+    prev = st.session_state.get(session_key, [])
+    # Keep only values that are still in options
+    valid_defaults = [v for v in prev if v in options]
+
+    # If nothing valid, fall back to all options
+    if not valid_defaults:
+        valid_defaults = options
+
+    # Render the multiselect
+    selected = st.sidebar.multiselect(
+        label,
+        options=options,
+        default=valid_defaults,
+        key=key
+    )
+    # Update session state
+    st.session_state[session_key] = selected or options
+    return st.session_state[session_key]
+
 # 📊 Data sources mapped to usernames (lowercase) or "default"
 DATA_SOURCES = {
     "emp": {  # Emporium branch
@@ -340,19 +362,35 @@ base = df[
 ].copy()
 
 # --- Invoice Type ---
-invoice_type_options = safe_unique_options(base, "Invoice Type")
-if 'selected_invoice_type' not in st.session_state:
-    st.session_state.selected_invoice_type = invoice_type_options
-
-selected_invoice_type = st.sidebar.multiselect(
-    "Select Invoice Type(s)",
-    options=invoice_type_options,
-    default=st.session_state.selected_invoice_type if st.session_state.selected_invoice_type else invoice_type_options,
-    key="invoice_multiselect"
+invoice_type_options = safe_unique_options(df, "Invoice Type")
+selected_invoice_type = safe_multiselect(
+    "Select Invoice Type(s)", 
+    invoice_type_options, 
+    key="invoice_multiselect", 
+    session_key="selected_invoice_type"
 )
-st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
 
-lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if invoice_type_options else base
+lvl1 = base[base['Invoice Type'].isin(selected_invoice_type)] if invoice_type_options else base
+
+# --- Shift Type ---
+shift_options = safe_unique_options(df, "Shift Type")
+selected_shifts = safe_multiselect(
+    "Select Shift(s)", 
+    shift_options, 
+    key="shift_multiselect", 
+    session_key="selected_shifts"
+)
+
+lvl2 = lvl1[lvl1['Shift Type'].isin(selected_shifts)] if shift_options else lvl1
+
+# --- Rider Name/Code ---
+rider_options = safe_unique_options(df, "Rider Name/Code")
+selected_riders = safe_multiselect(
+    "Select Rider(s)", 
+    rider_options, 
+    key="rider_multiselect", 
+    session_key="selected_riders"
+)
 
 # --- Shift Type ---
 shift_options = safe_unique_options(lvl1, "Shift Type")

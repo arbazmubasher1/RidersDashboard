@@ -570,6 +570,34 @@ for inv_type, row in comp_summary.iterrows():
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
+
+# -----------------------------
+# 🧍 Rider-wise Payouts (Admin view only)
+# -----------------------------
+if st.session_state.get("username") == "admin":
+    st.markdown("<div class='card'><h3>🧍 Rider-wise Reading Payouts</h3>", unsafe_allow_html=True)
+
+    rider_payouts_df = (
+        filtered_df.groupby("Rider Name/Code", dropna=True)
+        .agg(
+            Orders=("Invoice Number", "count"),
+            Total_Payout=("80/160", "sum")
+        )
+        .reset_index()
+        .sort_values("Total_Payout", ascending=False)
+    )
+
+    if not rider_payouts_df.empty:
+        st.dataframe(
+            rider_payouts_df.style.format({"Total_Payout": "{:,.0f} PKR"}),
+            use_container_width=True
+        )
+    else:
+        st.info("No rider payouts available for the selected filters.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 # -----------------------------
 # 💰 Invoice Summary (with Emporium 50/10 adjustment)
 # -----------------------------

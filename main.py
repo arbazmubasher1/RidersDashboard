@@ -464,7 +464,8 @@ basic_metrics = {
     "Completed": (filtered_df['Order Status'].str.lower() == 'completed').sum(),
     "Cancelled at Branch": (filtered_df['Order Status'].str.lower() == 'cancel order at branch').sum(),
     "Cancelled at Customer Doorstep": (filtered_df['Order Status'].str.lower() == 'cancel order at customer doorstep').sum(),
-    "Partial Orders": len(filtered_df["Partial Order Return (Amount)"])
+        "Partial Orders": len(filtered_df[filtered_df["Partial Order Return (Amount)"] > 0])
+
 }
 
 st.markdown("<div class='card'><h3>📊 Basic Information</h3>", unsafe_allow_html=True)

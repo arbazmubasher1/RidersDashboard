@@ -637,7 +637,7 @@ invoice_summary = {
     "Cancelled CARD Amount (Branch)": f"- Rs {cancelled_card_amount:,.0f}",
     "Cancelled CARD Amount (Customer Doorstep)": f"- Rs {cancelled_customer_card_amount:,.0f}",
     "Partial Card Return Amount": f"- Rs {partial_card_amount:,.0f}",
-    "Final Net Collection (Card Verification)": f"Rs {card_total-cancelled_card_amount-partial_card_amount:,.0f}",
+    "Final Net Collection (Card Verification)": f"Rs {card_total-cancelled_card_amount-partial_card_amount-cancelled_customer_card_amount:,.0f}",
 
     
 }
@@ -658,7 +658,7 @@ invoice_summary.update({
     "Parking Fee" : f"- Rs {fifty_ten_total:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
-    "Final Net Collection (COD)": f"Rs {dum-pr_tab_amount-staff_tab_amount-complaint_amount-cancelled_cod_amount-rider_payouts-rider_cash_submitted-partial_cod_amount:,.0f}",
+    "Final Net Collection (COD)": f"Rs {dum-pr_tab_amount-staff_tab_amount-complaint_amount-cancelled_cod_amount-rider_payouts-rider_cash_submitted-partial_cod_amount-cancelled_customer_cod_amount:,.0f}",
 })
 
 for label, value in invoice_summary.items():

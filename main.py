@@ -524,15 +524,24 @@ st.markdown("</div>", unsafe_allow_html=True)
 # 💸 Rider Reading Payouts
 # -----------------------------
 st.markdown("<div class='card'><h3>💸 Rider Reading Payouts</h3>", unsafe_allow_html=True)
-filtered_df['80/160'] = pd.to_numeric(filtered_df['80/160'], errors='coerce')
-count_80 = (filtered_df['80/160'] == 80).sum()
-count_160 = (filtered_df['80/160'] == 160).sum()
-total_comp = filtered_df['80/160'].sum()
+
+# Exclude branch cancellations, include everything else (including customer doorstep)
+valid_payouts_df = filtered_df[
+    filtered_df['Order Status'].str.lower() != 'cancel order at branch'
+].copy()
+
+valid_payouts_df['80/160'] = pd.to_numeric(valid_payouts_df['80/160'], errors='coerce').fillna(0)
+
+count_80 = (valid_payouts_df['80/160'] == 80).sum()
+count_160 = (valid_payouts_df['80/160'] == 160).sum()
+total_comp = valid_payouts_df['80/160'].sum()
+
 labels = {
     "80-PKR entries": count_80,
     "160-PKR entries": count_160,
     "Rider Reading Payouts": f"{total_comp} PKR"
 }
+
 for label, value in labels.items():
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -540,11 +549,13 @@ for label, value in labels.items():
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
 
+# Breakdown by Invoice Type for valid payouts only
 comp_summary = (
-    filtered_df.groupby('Invoice Type')
+    valid_payouts_df.groupby('Invoice Type')
     .agg(Order_Count=('Invoice Type', 'count'), Payout=('80/160', 'sum'))
     .sort_values('Payout', ascending=False)
 )
+
 for inv_type, row in comp_summary.iterrows():
     label = f"{inv_type} (Count: {row['Order_Count']})"
     value = f"{row['Payout']} PKR"
@@ -553,6 +564,7 @@ for inv_type, row in comp_summary.iterrows():
         st.markdown(f"<span style='font-size:18px; font-weight:600'>{label}</span>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div style='text-align:right; font-size:18px; font-weight:bold'>{value}</div>", unsafe_allow_html=True)
+
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------

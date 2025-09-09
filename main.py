@@ -462,7 +462,7 @@ basic_metrics = {
     "Total Orders": len(filtered_df),
     "In Progress": (filtered_df['Order Status'].str.lower() == 'in progress').sum(),
     "Completed": (filtered_df['Order Status'].str.lower() == 'completed').sum(),
-    "Cancelled": (filtered_df['Order Status'].str.lower() == 'cancel order at branch').sum(),
+    "Cancelled": (filtered_df['Order Status'].str.lower() == 'cancel order').sum(),
 }
 st.markdown("<div class='card'><h3>📊 Basic Information</h3>", unsafe_allow_html=True)
 for label, value in basic_metrics.items():
@@ -585,13 +585,10 @@ filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['
 #total_amount = filtered_df_valid['Total Amount'].sum()
 
 total_amount=filtered_df['Total Amount'].sum()
-cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order at branch']
+cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order']
 cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
 
-rider_payouts = filtered_df.loc[
-    filtered_df['Order Status'].str.lower() != 'cancel order at branch',
-    '80/160'
-].sum()
+rider_payouts = filtered_df['80/160'].sum()
 rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
 
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()

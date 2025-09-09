@@ -462,7 +462,8 @@ basic_metrics = {
     "Total Orders": len(filtered_df),
     "In Progress": (filtered_df['Order Status'].str.lower() == 'in progress').sum(),
     "Completed": (filtered_df['Order Status'].str.lower() == 'completed').sum(),
-    "Cancelled": (filtered_df['Order Status'].str.lower() == 'cancel order at branch').sum(),
+    "Cancelled at Branch": (filtered_df['Order Status'].str.lower() == 'cancel order at branch').sum(),
+    "Cancelled at Customer Doorstep": (filtered_df['Order Status'].str.lower() == 'cancel order at customer doorstep').sum(),
 }
 st.markdown("<div class='card'><h3>📊 Basic Information</h3>", unsafe_allow_html=True)
 for label, value in basic_metrics.items():
@@ -586,9 +587,23 @@ filtered_df_valid = filtered_df[~filtered_df['Invoice Type'].str.lower().isin(['
 
 total_amount=filtered_df['Total Amount'].sum()
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order at branch']
+cancelled_customer_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order at customer doorstep']
+
+cancelled_customer_cod_amount = cancelled_customer_df[
+    cancelled_customer_df['Invoice Type'].str.lower().str.contains('cod')
+]['Total Amount'].sum()
+
+cancelled_customer_card_amount = cancelled_customer_df[
+    cancelled_customer_df['Invoice Type'].str.lower().str.contains('card')
+]['Total Amount'].sum()
+
 cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
 
-rider_payouts = filtered_df['80/160'].sum()
+
+rider_payouts = filtered_df.loc[
+    filtered_df['Order Status'].str.lower() != 'cancel order at branch',
+    '80/160'
+].sum()
 rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
 
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()
@@ -619,7 +634,8 @@ st.markdown("<div class='card'><h3>💰 Invoice Summary</h3>", unsafe_allow_html
 invoice_summary = {
     "Total Amount": f"Rs {total_amount:,.0f}",
     "Card Total Amount ": f"Rs {card_total:,.0f}",
-    "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
+    "Cancelled CARD Amount (Branch)": f"- Rs {cancelled_card_amount:,.0f}",
+    "Cancelled CARD Amount (Customer Doorstep)": f"- Rs {cancelled_customer_card_amount:,.0f}",
     "Partial Card Return Amount": f"- Rs {partial_card_amount:,.0f}",
     "Final Net Collection (Card Verification)": f"Rs {card_total-cancelled_card_amount-partial_card_amount:,.0f}",
 
@@ -636,7 +652,8 @@ invoice_summary.update({
     "PR Tab Order Amount": f"- Rs {pr_tab_amount:,.0f}",
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
-    "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
+    "Cancelled COD Amount (Branch)": f"- Rs {cancelled_cod_amount:,.0f}",
+    "Cancelled COD Amount (Customer Doorstep)": f"- Rs {cancelled_customer_cod_amount:,.0f}",
     "Partial COD Return Amount": f"- Rs {partial_cod_amount:,.0f}",
     "Parking Fee" : f"- Rs {fifty_ten_total:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",

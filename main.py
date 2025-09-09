@@ -464,7 +464,6 @@ basic_metrics = {
     "Completed": (filtered_df['Order Status'].str.lower() == 'completed').sum(),
     "Cancelled at Branch": (filtered_df['Order Status'].str.lower() == 'cancel order at branch').sum(),
     "Cancelled at Customer Doorstep": (filtered_df['Order Status'].str.lower() == 'cancel order at customer doorstep').sum(),
-    "Partial Orders": (filtered_df['Partial Order Return (Amount)'].str.lower() == 'partial order return (amount)').sum(),
 
 }
 

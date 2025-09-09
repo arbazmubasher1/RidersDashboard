@@ -588,7 +588,10 @@ total_amount=filtered_df['Total Amount'].sum()
 cancelled_df = filtered_df[filtered_df['Order Status'].str.lower() == 'cancel order at branch']
 cancelled_by_invoice_type = cancelled_df.groupby('Invoice Type')['Total Amount'].agg(['count','sum']).reset_index()
 
-rider_payouts = filtered_df['80/160'].sum()
+rider_payouts = filtered_df.loc[
+    filtered_df['Order Status'].str.lower() != 'cancel order at branch',
+    '80/160'
+].sum()
 rider_cash_submitted = pd.to_numeric(filtered_df['Rider Cash Submission to DFPL'], errors='coerce').sum()
 
 cancelled_cod_amount = cancelled_df[cancelled_df['Invoice Type'].str.lower().str.contains('cod')]['Total Amount'].sum()

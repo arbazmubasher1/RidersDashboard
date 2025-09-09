@@ -196,7 +196,7 @@ def load_data(sheet_url: str, worksheet_name: str):
         "Total Delivery Time", "Total Rider Return Time", "Total Cycle Time",
         "Delay Reason", "Customer Complaint", "Order Status",
         "Rider Cash Submission to DFPL", "Closing Status", "Total Promised Time",
-        "Invoice Time", "Trade Area", "50/10"   # <- include 50/10 for Emporium adjustment
+        "Invoice Time", "Trade Area", "50/10","Partial Order Return (Amount)"     # <- include 50/10 for Emporium adjustment
     ]
     for col in expected_columns:
         if col not in df.columns:
@@ -216,6 +216,10 @@ def load_data(sheet_url: str, worksheet_name: str):
 
     df['Invoice Time'] = pd.to_datetime(df['Invoice Time'], format="%I:%M:%S %p", errors='coerce')
     df['Hour'] = df['Invoice Time'].dt.hour
+
+    df["Partial Order Return (Amount)"] = pd.to_numeric(
+        df["Partial Order Return (Amount)"], errors="coerce"
+    ).fillna(0).astype(int)
 
     return df, datetime.now()
 # -----------------------------
@@ -553,6 +557,14 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------
 # 💰 Invoice Summary (with Emporium 50/10 adjustment)
 # -----------------------------
+# Split partial returns by invoice type
+partial_cod_amount = filtered_df[
+    filtered_df["Invoice Type"].str.lower().str.contains("cod", na=False)
+]["Partial Order Return (Amount)"].sum()
+
+partial_card_amount = filtered_df[
+    filtered_df["Invoice Type"].str.lower().str.contains("card", na=False)
+]["Partial Order Return (Amount)"].sum()
 
 # Complaint/Staff/PR Tab amounts
 complaint_df = filtered_df[filtered_df['Invoice Type'].str.lower() == 'complaint order']
@@ -608,7 +620,8 @@ invoice_summary = {
     "Total Amount": f"Rs {total_amount:,.0f}",
     "Card Total Amount ": f"Rs {card_total:,.0f}",
     "Cancelled CARD Amount": f"- Rs {cancelled_card_amount:,.0f}",
-    "Final Net Collection (Card Verification)": f"Rs {card_total-cancelled_card_amount:,.0f}",
+    "Partial Card Return Amount": f"- Rs {partial_card_amount:,.0f}",
+    "Final Net Collection (Card Verification)": f"Rs {card_total-cancelled_card_amount-partial_card_amount:,.0f}",
 
     
 }
@@ -624,10 +637,11 @@ invoice_summary.update({
     "Staff Tab Order Amount": f"- Rs {staff_tab_amount:,.0f}",
     "Complaint Order Amount": f"- Rs {complaint_amount:,.0f}",
     "Cancelled COD Amount": f"- Rs {cancelled_cod_amount:,.0f}",
+    "Partial COD Return Amount": f"- Rs {partial_cod_amount:,.0f}",
     "Parking Fee" : f"- Rs {fifty_ten_total:,.0f}",
     "Rider Reading Payouts": f"- Rs {rider_payouts:,.0f}",
     "Rider Cash Submitted to DFPL": f"- Rs {rider_cash_submitted:,.0f}",
-    "Final Net Collection (COD)": f"Rs {dum-pr_tab_amount-staff_tab_amount-complaint_amount-cancelled_cod_amount-rider_payouts-rider_cash_submitted:,.0f}",
+    "Final Net Collection (COD)": f"Rs {dum-pr_tab_amount-staff_tab_amount-complaint_amount-cancelled_cod_amount-rider_payouts-rider_cash_submitted-partial_cod_amount:,.0f}",
 })
 
 for label, value in invoice_summary.items():

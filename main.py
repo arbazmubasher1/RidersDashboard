@@ -409,10 +409,10 @@ if selected_riders or selected_invoice_type or selected_shifts:
         f"""
         <div class='card'>
             <h3 style="margin:0 0 8px 0;">📌 Current Filters</h3>
-            <div class='card-metric'>📅 {start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}</div>
-            <div class='card-metric'>🧍 {selected_riders} rider(s) selected</div>
-            <div class='card-metric'>📄 {', '.join(selected_invoice_type)}</div>
-            <div class='card-metric'>🕑 {', '.join(selected_shifts) if selected_shifts else 'None'}</div>
+            <div class='card-metric'>📅 Date {start_date.strftime('%d-%b-%Y')} to {end_date.strftime('%d-%b-%Y')}</div>
+            <div class='card-metric'>🧍 Rider: {selected_riders} selected</div>
+            <div class='card-metric'>📄 Payment Modes {', '.join(selected_invoice_type)}</div>
+            <div class='card-metric'>🕑 Shifts {', '.join(selected_shifts) if selected_shifts else 'None'}</div>
         </div>
         """,
         unsafe_allow_html=True

@@ -320,9 +320,17 @@ st.sidebar.caption(f"Worksheet: {WORKSHEET_NAME}")
 # -----------------------------
 # Cascading sidebar filters
 # -----------------------------
-min_date = pd.to_datetime(df['Date'].min())
-max_date = pd.to_datetime(df['Date'].max())
-start_date, end_date = st.sidebar.date_input("Select Date Range", [min_date, max_date])
+today = datetime.today().date()  # current day only
+min_date = pd.to_datetime(df['Date'].min()).date()
+max_date = pd.to_datetime(df['Date'].max()).date()
+
+# Default to today
+start_date, end_date = st.sidebar.date_input(
+    "Select Date Range",
+    [today, today],  # default: today only
+    min_value=min_date,
+    max_value=max_date
+)
 
 base = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))].copy()
 

@@ -332,18 +332,30 @@ if 'selected_shifts' not in st.session_state:
     st.session_state.selected_shifts = sorted(base['Shift Type'].dropna().unique().tolist())
 if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = sorted(base['Rider Name/Code'].dropna().unique().tolist())
-
 invoice_type_options = sorted(base['Invoice Type'].dropna().unique().tolist())
 prev_invoice = set(st.session_state.selected_invoice_type)
 default_invoice = sorted(prev_invoice & set(invoice_type_options)) or invoice_type_options
 
+c1, c2 = st.sidebar.columns(2)
+with c1:
+    if st.button("Select All Invoice Types"):
+        st.session_state.selected_invoice_type = invoice_type_options
+with c2:
+    if st.button("Clear All Invoice Types"):
+        st.session_state.selected_invoice_type = []
+
 selected_invoice_type = st.sidebar.multiselect(
     "Select Invoice Type(s)",
     options=invoice_type_options,
-    default=default_invoice,
+    default=(
+        st.session_state.selected_invoice_type
+        if set(st.session_state.selected_invoice_type) <= set(invoice_type_options)
+        else default_invoice
+    ),
     key="invoice_multiselect"
 )
-st.session_state.selected_invoice_type = selected_invoice_type or invoice_type_options
+st.session_state.selected_invoice_type = selected_invoice_type
+
 
 lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] if st.session_state.selected_invoice_type else base
 

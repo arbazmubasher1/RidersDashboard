@@ -68,7 +68,7 @@ DATA_SOURCES = {
         "title": "🛵 Rider Delivery Dashboard – BT",
         "brand": "Johnny & Jugnu",
     },
-    "default": {  # Default (Phase 6) branch
+    "p6": {  # Default (Phase 6) branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit",
         "worksheet": "For Dashboard",
         "phase": "Phase 6",

@@ -24,7 +24,7 @@ USERS = {
 }
 
 
-# 📊 Data sources mapped to usernames (lowercase) or "default"
+# 📊 Data sources mapped to usernames (lowercase) or "p6"
 DATA_SOURCES = {
     "emp": {  # Emporium branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1I2sIaAJxrNQIRHAmRTXthqtG1DH6Zep7Hnsa42UZmkk/edit#gid=1740157752",
@@ -68,7 +68,7 @@ DATA_SOURCES = {
         "title": "🛵 Rider Delivery Dashboard – BT",
         "brand": "Johnny & Jugnu",
     },
-    "p6": {  # Default (Phase 6) branch
+    "p6": {  # p6 (Phase 6) branch
         "sheet_url": "https://docs.google.com/spreadsheets/d/1luzRe9um2-RVWCvChbzQI91LZm1oq_yc2d08gaOuYBg/edit",
         "worksheet": "For Dashboard",
         "phase": "Phase 6",
@@ -79,7 +79,7 @@ DATA_SOURCES = {
 
 def _resolve_profile(username: str) -> dict:
     u = (username or "").strip().lower()
-    return DATA_SOURCES.get(u, DATA_SOURCES["default"])
+    return DATA_SOURCES.get(u, DATA_SOURCES["p6"])
 
 def _authed() -> bool:
     if not st.session_state.get("authed", False):
@@ -96,12 +96,12 @@ def _authed() -> bool:
     return True
 
 def _login_ui():
-    default_title = DATA_SOURCES["default"]["title"]
+    p6_title = DATA_SOURCES["p6"]["title"]
     st.markdown(
         f"""
         <div style="text-align:center;margin-top:6vh">
           <h1 style="margin-bottom:0.5em">🛡️ Riders Dashboard Access</h1>
-          <p style="color:#666">Enter your credentials to view: <b>{default_title}</b> or the Emporium dashboard.</p>
+          <p style="color:#666">Enter your credentials to view: <b>{p6_title}</b> or the Emporium dashboard.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -140,7 +140,7 @@ if not _authed():
 
 
 # Sidebar session header + logout
-phase_label = st.session_state.get("phase", _resolve_profile("default")["phase"])
+phase_label = st.session_state.get("phase", _resolve_profile("p6")["phase"])
 with st.sidebar:
     st.caption(f"Signed in as **{st.session_state.get('username','(user)')}** · {phase_label}")
     if st.button("Logout"):
@@ -160,8 +160,8 @@ credentials = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 gc = gspread.authorize(credentials)
 
 # Use the logged-in user's source
-SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
-WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
+SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["p6"]["sheet_url"])
+WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["p6"]["worksheet"])
 def format_timedelta(td):
     if pd.isnull(td):
         return "00:00:00"
@@ -183,7 +183,7 @@ def load_data(sheet_url: str, worksheet_name: str):
         ws,
         evaluate_formulas=True,
         include_tailing_empty=False,
-        default_blank=""
+        p6_blank=""
     )
     df.dropna(how="all", inplace=True)
     df.dropna(axis=1, how="all", inplace=True)
@@ -230,7 +230,7 @@ if st.session_state.get("username") == "admin":
     selected_branches = st.sidebar.multiselect(
         "Select Branches",
         options=branch_options,
-        default=branch_options,
+        p6=branch_options,
     )
 
     all_dfs = []
@@ -250,16 +250,16 @@ if st.session_state.get("username") == "admin":
         st.stop()
 
 else:
-    SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["default"]["sheet_url"])
-    WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["default"]["worksheet"])
+    SHEET_URL = st.session_state.get("sheet_url", DATA_SOURCES["p6"]["sheet_url"])
+    WORKSHEET_NAME = st.session_state.get("worksheet", DATA_SOURCES["p6"]["worksheet"])
     df, last_updated = load_data(SHEET_URL, WORKSHEET_NAME)
     df["Branch"] = st.session_state.get("phase")
 
 # ----------------
 # Page setup / UI (with red card styling)
 # ----------------
-page_title = st.session_state.get("title", DATA_SOURCES["default"]["title"])
-brand_name = st.session_state.get("brand", DATA_SOURCES["default"]["brand"])
+page_title = st.session_state.get("title", DATA_SOURCES["p6"]["title"])
+brand_name = st.session_state.get("brand", DATA_SOURCES["p6"]["brand"])
 
 st.markdown(f"""
     <h1 style='text-align: center; color: #c62828; font-size: 42px; font-weight: bold; margin-bottom: 1em;'>
@@ -334,7 +334,7 @@ if 'selected_riders' not in st.session_state:
     st.session_state.selected_riders = sorted(base['Rider Name/Code'].dropna().unique().tolist())
 invoice_type_options = sorted(base['Invoice Type'].dropna().unique().tolist())
 prev_invoice = set(st.session_state.selected_invoice_type)
-default_invoice = sorted(prev_invoice & set(invoice_type_options)) or invoice_type_options
+p6_invoice = sorted(prev_invoice & set(invoice_type_options)) or invoice_type_options
 
 c1, c2 = st.sidebar.columns(2)
 with c1:
@@ -347,10 +347,10 @@ with c2:
 selected_invoice_type = st.sidebar.multiselect(
     "Select Invoice Type(s)",
     options=invoice_type_options,
-    default=(
+    p6=(
         st.session_state.selected_invoice_type
         if set(st.session_state.selected_invoice_type) <= set(invoice_type_options)
-        else default_invoice
+        else p6_invoice
     ),
     key="invoice_multiselect"
 )
@@ -361,12 +361,12 @@ lvl1 = base[base['Invoice Type'].isin(st.session_state.selected_invoice_type)] i
 
 shift_options = sorted(lvl1['Shift Type'].dropna().unique().tolist())
 prev_shifts = set(st.session_state.selected_shifts)
-default_shifts = sorted(prev_shifts & set(shift_options)) or shift_options
+p6_shifts = sorted(prev_shifts & set(shift_options)) or shift_options
 
 selected_shifts = st.sidebar.multiselect(
     "Select Shift(s)",
     options=shift_options,
-    default=default_shifts,
+    p6=p6_shifts,
     key="shift_multiselect"
 )
 st.session_state.selected_shifts = selected_shifts or shift_options
@@ -375,7 +375,7 @@ lvl2 = lvl1[lvl1['Shift Type'].isin(st.session_state.selected_shifts)] if st.ses
 
 rider_options = sorted(lvl2['Rider Name/Code'].dropna().unique().tolist())
 prev_riders = set(st.session_state.selected_riders)
-default_riders = sorted(prev_riders & set(rider_options)) or rider_options
+p6_riders = sorted(prev_riders & set(rider_options)) or rider_options
 
 c1, c2 = st.sidebar.columns(2)
 with c1:
@@ -388,7 +388,7 @@ with c2:
 selected_riders = st.sidebar.multiselect(
     "Select Rider(s)",
     options=rider_options,
-    default=st.session_state.selected_riders if set(st.session_state.selected_riders) <= set(rider_options) else default_riders,
+    p6=st.session_state.selected_riders if set(st.session_state.selected_riders) <= set(rider_options) else p6_riders,
     key="rider_multiselect"
 )
 st.session_state.selected_riders = selected_riders
